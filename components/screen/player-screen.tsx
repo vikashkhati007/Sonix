@@ -15,7 +15,7 @@ export default function PlayerScreen() {
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Now Playing</Text>
         <TouchableOpacity style={styles.headerBtn}>
-          <Feather name="heart" size={26} color="#fff" />
+          <Feather name="heart" size={28} color="#fff" />
         </TouchableOpacity>
       </View>
 
@@ -90,7 +90,12 @@ const styles = StyleSheet.create({
     marginBottom: 22,
   },
   headerBtn: {
-    padding: 10,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 20,
+    width: 50,
+    height: 50,
     borderRadius: 50,
     backgroundColor: 'rgba(128,128,128,0.15)',
   },
