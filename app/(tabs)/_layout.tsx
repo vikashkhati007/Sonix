@@ -64,7 +64,7 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="music"
+        name="(music)"
         options={{
           tabBarIcon: ({ focused }) => (
             <CustomTabIcon
