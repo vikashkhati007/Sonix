@@ -1,24 +1,50 @@
-import React from 'react'
-import { StyleSheet, View } from 'react-native'
-import { ThemedText } from './themed-text'
+import { Inter_400Regular, useFonts } from "@expo-google-fonts/inter";
+import { SplashScreen } from "expo-router";
+import React, { useEffect } from "react";
+import { StyleSheet, View } from "react-native";
+import CategoryTabs from "./screen/components/category";
+import TrendingSection from "./screen/components/trending-section";
+import { ThemedText } from "./themed-text";
 
 const MainSection = () => {
+  const [loaded, error] = useFonts({
+    Inter_400Regular,
+  });
+
+  useEffect(() => {
+    if (loaded || error) {
+      SplashScreen.hideAsync();
+    }
+  }, [loaded, error]);
+
+  if (!loaded && !error) {
+    return null;
+  }
+
   return (
     <View style={styles.container}>
       <ThemedText style={styles.text}>Hi, Samantha</ThemedText>
+      <CategoryTabs/>
+      <TrendingSection/>
     </View>
-  )
-}
+  );
+};
 
 const styles = StyleSheet.create({
   container: {
-    flexDirection: 'column',
-    justifyContent: 'space-between',
+    flexDirection: "column",
+    justifyContent: "space-between",
     paddingHorizontal: 10,
+    display: 'flex',
+    gap: 20
+    
   },
   text: {
-    color: 'white', fontSize: 24, fontWeight: 500, paddingVertical: 20
-  }
-})
+    color: "white",
+    fontSize: 40,
+    fontFamily: "Inter_400Regular",
+    padding: 16,
+  },
+});
 
-export default MainSection
+export default MainSection;

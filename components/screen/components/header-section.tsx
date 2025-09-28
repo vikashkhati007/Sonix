@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Avatar, Icon } from 'react-native-elements';
-import { ThemedView } from './themed-view';
+import { ThemedView } from '../../themed-view';
 
 const Header = () => {
   return (
@@ -22,7 +22,7 @@ const styles = StyleSheet.create({
     display: 'flex',
     flexDirection: 'column',
     justifyContent: 'space-between',
-    paddingHorizontal: 10,
+    backgroundColor: 'black'
   },
   otherContainer:{
     flexDirection: 'row',

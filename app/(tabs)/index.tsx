@@ -1,14 +1,13 @@
-import Header from '@/components/header-section'
-import MainSection from '@/components/hero-mainsection'
-import React from 'react'
-import { StyleSheet, View } from 'react-native'
+import HomePage from '@/components/screen/home-screen';
+import React from 'react';
+import { StyleSheet } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-const HomePage = () => {
+const index = () => {
   return (
-    <View style={styles.container}>
-      <Header />
-      <MainSection />
-    </View>
+    <SafeAreaView style={styles.container}>
+      <HomePage />
+    </SafeAreaView>
   )
 }
 
@@ -19,5 +18,4 @@ const styles = StyleSheet.create({
   }
 })
 
-
-export default HomePage
+export default index
