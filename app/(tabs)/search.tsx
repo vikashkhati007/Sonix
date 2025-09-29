@@ -111,7 +111,7 @@ const SearchScreen = () => {
           style={styles.submitButton}
           onPress={handleSearchSubmit}
         >
-          <Ionicons name="arrow-forward-circle" size={28} color="#C4F34A" />
+          <Ionicons name="arrow-forward-circle" size={50} color="#C4F34A" />
         </TouchableOpacity>
       </View>
 
@@ -141,7 +141,20 @@ const SearchScreen = () => {
                 </View>
               </View>
               <TouchableOpacity style={styles.playButton}>
-                <Ionicons name="play" size={20} color="#fff" />
+                <Link
+                  href={{
+                    pathname: "/player/[id]",
+                    params: {
+                      id: song.videoId,
+                      thumbnails: song.thumbnails?.[1]?.url,
+                      name: song.name,
+                      artistName: song.artist?.name,
+                      albumName: song.album?.name,
+                    },
+                  }}
+                >
+                  <Ionicons name="play" size={20} color="#fff" />
+                </Link>
               </TouchableOpacity>
             </TouchableOpacity>
           ))
@@ -190,7 +203,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginLeft: 8,
   },
-  submitButton: { marginRight: 8 },
+  submitButton: {},
   albumList: { flex: 1, paddingHorizontal: 20, marginTop: 8 },
   albumItem: { flexDirection: "row", alignItems: "center", marginBottom: 20 },
   albumImage: {

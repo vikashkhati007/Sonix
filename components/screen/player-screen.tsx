@@ -4,16 +4,15 @@ import React, { useState } from 'react';
 import { Image, ImageBackground, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Slider } from 'react-native-elements';
 
-export default function PlayerScreen() {
+export default function PlayerScreen({ id, thumbnails, name, artistName, albumName }: { id: number, thumbnails: string, name: string, artistName: string, albumName: string }) {
   const [progress, setProgress] = useState(0.28);
-  const albumImage = "https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg";
 
   return (
     <View style={styles.container}>
       {/* ✅ Wrapper with rounded bottom */}
       <View style={styles.bgWrapper}>
         <ImageBackground
-          source={{ uri: albumImage }}
+          source={{ uri: thumbnails }}
           style={styles.backgroundImage}
           blurRadius={30}
         >
@@ -33,11 +32,11 @@ export default function PlayerScreen() {
             </View>
 
             <View style={styles.albumWrap}>
-              <Image source={{ uri: albumImage }} style={styles.album} />
+              <Image source={{ uri: thumbnails }} style={styles.album} />
             </View>
 
-            <Text style={styles.song}>Starlit Reverie</Text>
-            <Text style={styles.artist}>Budiarti x Lil magrib</Text>
+            <Text style={styles.song}>{name}</Text>
+            <Text style={styles.artist}>{artistName}</Text>
             
             <View style={styles.lyricContainer}>
               <Text style={styles.lyricInactive}>Whispers in the midnight breeze,</Text>
