@@ -1,18 +1,9 @@
-import { FontAwesome6 } from "@expo/vector-icons";
+import { FontAwesome6, Ionicons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
 import React from "react";
 import { StyleSheet, View } from "react-native";
 
-// Helper to render icons with active circular accent
-function CustomTabIcon({
-  name,
-  isActive,
-  Component,
-}: {
-  name: string;
-  isActive: boolean;
-  Component: any;
-}) {
+function CustomTabIcon({ name, isActive, Component }: any) {
   return (
     <View style={[styles.iconWrap, isActive && styles.iconActiveBg]}>
       <Component name={name} size={27} color={isActive ? "#181828" : "#fff"} />
@@ -23,9 +14,10 @@ function CustomTabIcon({
 export default function TabLayout() {
   return (
     <Tabs
+      initialRouteName="index" // Home active by default
       screenOptions={{
-        tabBarShowLabel: false,
         headerShown: false,
+        tabBarShowLabel: false,
         tabBarStyle: {
           position: "absolute",
           left: 16,
@@ -33,20 +25,18 @@ export default function TabLayout() {
           bottom: 25,
           backgroundColor: "rgba(32,33,38,0.92)",
           borderRadius: 50,
-          height: 80, // Reduce from 100 to 90
+          height: 80,
           borderTopWidth: 0,
           flexDirection: "row",
           alignItems: "center",
-          justifyContent: "space-around", // Change from space-between
-          paddingHorizontal: 16, // Reduce padding
+          justifyContent: "space-around",
+          paddingHorizontal: 16,
           marginHorizontal: 30,
         },
-
-        tabBarItemStyle: {},
       }}
     >
       <Tabs.Screen
-        name="(home)/index"
+        name="index"
         options={{
           tabBarIcon: ({ focused }) => (
             <CustomTabIcon
@@ -57,7 +47,6 @@ export default function TabLayout() {
           ),
         }}
       />
-      
       <Tabs.Screen
         name="search"
         options={{
@@ -69,10 +58,8 @@ export default function TabLayout() {
             />
           ),
         }}
-      /> 
-       {/*
-
-      {/* <Tabs.Screen
+      />
+      <Tabs.Screen
         name="settings"
         options={{
           tabBarIcon: ({ focused }) => (
@@ -83,7 +70,7 @@ export default function TabLayout() {
             />
           ),
         }}
-      /> */}
+      />
     </Tabs>
   );
 }
@@ -95,7 +82,6 @@ const styles = StyleSheet.create({
     borderRadius: 26,
     alignItems: "center",
     justifyContent: "center",
-    // Remove this line: position: 'absolute',
   },
   iconActiveBg: {
     backgroundColor: "#D7FD50",
