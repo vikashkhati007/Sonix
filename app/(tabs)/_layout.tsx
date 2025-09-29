@@ -1,8 +1,4 @@
-import {
-  FontAwesome6,
-  Ionicons,
-  MaterialCommunityIcons,
-} from "@expo/vector-icons";
+import { FontAwesome6 } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
 import React from "react";
 import { StyleSheet, View } from "react-native";
@@ -50,7 +46,7 @@ export default function TabLayout() {
       }}
     >
       <Tabs.Screen
-        name="index"
+        name="(home)/index"
         options={{
           tabBarIcon: ({ focused }) => (
             <CustomTabIcon
@@ -61,20 +57,9 @@ export default function TabLayout() {
           ),
         }}
       />
+      
       <Tabs.Screen
-        name="(music)"
-        options={{
-          tabBarIcon: ({ focused }) => (
-            <CustomTabIcon
-              name="music-box"
-              isActive={focused}
-              Component={MaterialCommunityIcons}
-            />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="(search)"
+        name="search"
         options={{
           tabBarIcon: ({ focused }) => (
             <CustomTabIcon
@@ -84,8 +69,10 @@ export default function TabLayout() {
             />
           ),
         }}
-      />
-      <Tabs.Screen
+      /> 
+       {/*
+
+      {/* <Tabs.Screen
         name="settings"
         options={{
           tabBarIcon: ({ focused }) => (
@@ -96,7 +83,7 @@ export default function TabLayout() {
             />
           ),
         }}
-      />
+      /> */}
     </Tabs>
   );
 }
