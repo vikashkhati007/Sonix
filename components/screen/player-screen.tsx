@@ -1,23 +1,112 @@
 import { Feather, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Link } from 'expo-router';
-import React, { useState } from 'react';
-import { Image, ImageBackground, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { Alert, Image, ImageBackground, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Slider } from 'react-native-elements';
 
-export default function PlayerScreen({ id, thumbnails, name, artistName, albumName }: { id: number, thumbnails: string, name: string, artistName: string, albumName: string }) {
+export default function PlayerScreen({ id, thumbnails, name, artistName, albumName }: { id: string, thumbnails: string, name: string, artistName: string, albumName: string }) {
   const [progress, setProgress] = useState(0.28);
+  const [isLiked, setIsLiked] = useState(false);
+  const [likedSongs, setLikedSongs] = useState([]);
+
+  // Load liked songs on component mount
+  useEffect(() => {
+    loadLikedSongs();
+  }, []);
+
+  // Save to recent songs on song change (when id changes!)
+  useEffect(() => {
+    addToRecentSongs();
+  }, [id]);
+
+  // Check if current song is liked
+  useEffect(() => {
+    const songIsLiked = likedSongs.some(song => song.id === id);
+    setIsLiked(songIsLiked);
+  }, [likedSongs, id]);
+
+  const loadLikedSongs = async () => {
+    try {
+      const storedLikedSongs = await AsyncStorage.getItem('likedSongs');
+      if (storedLikedSongs) {
+        setLikedSongs(JSON.parse(storedLikedSongs));
+      }
+    } catch (error) {
+      console.error('Error loading liked songs:', error);
+    }
+  };
+
+  const saveLikedSongs = async (songs) => {
+    try {
+      await AsyncStorage.setItem('likedSongs', JSON.stringify(songs));
+    } catch (error) {
+      console.error('Error saving liked songs:', error);
+    }
+  };
+
+  const handleLikePress = async () => {
+    const currentSong = {
+      id,
+      thumbnails,
+      name,
+      artistName,
+      albumName,
+      likedAt: new Date().toISOString()
+    };
+
+    let updatedLikedSongs;
+
+    if (isLiked) {
+      // Remove from liked songs
+      updatedLikedSongs = likedSongs.filter(song => song.id !== id);
+      Alert.alert('Removed from Liked Songs', `"${name}" has been removed from your liked songs.`);
+    } else {
+      // Add to liked songs
+      updatedLikedSongs = [...likedSongs, currentSong];
+      Alert.alert('Added to Liked Songs', `"${name}" has been added to your liked songs.`);
+    }
+
+    setLikedSongs(updatedLikedSongs);
+    await saveLikedSongs(updatedLikedSongs);
+    setIsLiked(!isLiked);
+  };
+
+  // --- THIS IS NEW: Save song to the recents list in AsyncStorage ---
+  const addToRecentSongs = async () => {
+    try {
+      const currentSong = {
+        id,
+        thumbnails,
+        name,
+        artistName,
+        albumName,
+        playedAt: new Date().toISOString(),
+      };
+      const stored = await AsyncStorage.getItem('recentSongs');
+      let arr = stored ? JSON.parse(stored) : [];
+      // Remove duplicate if exists
+      arr = arr.filter(song => song.id !== id);
+      // Add to front
+      arr.unshift(currentSong);
+      // Optionally limit history size (e.g., last 50 recent songs)
+      if(arr.length > 50) arr = arr.slice(0, 50);
+      await AsyncStorage.setItem('recentSongs', JSON.stringify(arr));
+    } catch (e) {
+      console.error('Error saving recent song:', e);
+    }
+  };
+  // ---------------------------------------------------------------
 
   return (
     <View style={styles.container}>
-      {/* ✅ Wrapper with rounded bottom */}
       <View style={styles.bgWrapper}>
         <ImageBackground
           source={{ uri: thumbnails }}
           style={styles.backgroundImage}
           blurRadius={30}
         >
-          <View style={styles.overlay} />
-          
+          <View style={styles.overlay} />          
           <View style={styles.content}>
             <View style={styles.header}>
               <TouchableOpacity style={styles.headerBtn}>
@@ -26,24 +115,25 @@ export default function PlayerScreen({ id, thumbnails, name, artistName, albumNa
                 </Link>
               </TouchableOpacity>
               <Text style={styles.headerTitle}>Now Playing</Text>
-              <TouchableOpacity style={styles.headerBtn}>
-                <Feather name="heart" size={28} color="#fff" />
+              <TouchableOpacity style={styles.headerBtn} onPress={handleLikePress}>
+                <Feather 
+                  name="heart"
+                  size={28} 
+                  color={isLiked ? "#D7FD50" : "#fff"}
+                  fill={isLiked ? "#D7FD50" : "none"}
+                />
               </TouchableOpacity>
             </View>
-
             <View style={styles.albumWrap}>
               <Image source={{ uri: thumbnails }} style={styles.album} />
             </View>
-
             <Text style={styles.song}>{name}</Text>
             <Text style={styles.artist}>{artistName}</Text>
-            
             <View style={styles.lyricContainer}>
               <Text style={styles.lyricInactive}>Whispers in the midnight breeze,</Text>
               <Text style={styles.lyricActive}>Carrying dreams across the seas,</Text>
               <Text style={styles.lyricInactive}>I close my eyes, let go, and drift away.</Text>
             </View>
-
             <View style={styles.sliderContainer}>
               <Slider
                 style={styles.slider}
@@ -60,7 +150,6 @@ export default function PlayerScreen({ id, thumbnails, name, artistName, albumNa
                 <Text style={styles.time}>-2:15</Text>
               </View>
             </View>
-
             <View style={styles.controlsRow}>
               <TouchableOpacity style={styles.controlBtn}>
                 <MaterialCommunityIcons name="shuffle" size={26} color="#fff" />
@@ -78,7 +167,6 @@ export default function PlayerScreen({ id, thumbnails, name, artistName, albumNa
                 <Feather name="music" size={24} color="#fff" />
               </TouchableOpacity>
             </View>
-
             <View style={styles.homeIndicator} />
           </View>
         </ImageBackground>
@@ -92,19 +180,15 @@ const styles = StyleSheet.create({
     flex: 1,
     width: '100%',
   },
-
-  // ✅ Rounded wrapper
   bgWrapper: {
     flex: 1,
-    overflow: 'hidden', // required for border radius to work
+    overflow: 'hidden',
   },
-
   backgroundImage: {
     flex: 1,
     width: '100%',
     height: '100%',
   },
-
   overlay: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(0, 0, 0, 0.6)',
@@ -234,6 +318,5 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     marginTop: 4,
     opacity: 0.3,
-  },
-  
+  },  
 });

@@ -22,7 +22,7 @@ const music = () => {
   return (
     <View style={styles.container}>
         <PlayerScreen 
-            id={Number(id)}
+            id={String(id)}
             thumbnails={String(thumbnails)}
             name={String(name)}
             artistName={String(artistName)}
