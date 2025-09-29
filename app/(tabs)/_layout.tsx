@@ -47,12 +47,24 @@ export default function TabLayout() {
           ),
         }}
       />
-      <Tabs.Screen
+        <Tabs.Screen
         name="search"
         options={{
           tabBarIcon: ({ focused }) => (
             <CustomTabIcon
               name="magnifying-glass"
+              isActive={focused}
+              Component={FontAwesome6}
+            />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="activity"
+        options={{
+          tabBarIcon: ({ focused }) => (
+            <CustomTabIcon
+              name="heart"
               isActive={focused}
               Component={FontAwesome6}
             />
