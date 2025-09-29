@@ -1,7 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Link } from "expo-router";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
+  ActivityIndicator,
   Image,
   ScrollView,
   StatusBar,
@@ -13,68 +14,63 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-const albums = [
-  {
-    id: 1,
-    title: "Starlit Reverie",
-    artist: "Budiarti",
-    songs: 8,
-    image:
-      "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&h=200&fit=crop",
-  },
-  {
-    id: 2,
-    title: "Midnight Confessions",
-    artist: "Alexiao",
-    songs: 24,
-    image:
-      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop",
-  },
-  {
-    id: 3,
-    title: "Lost in the Echo",
-    artist: "Alexiao",
-    songs: 24,
-    image:
-      "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&h=200&fit=crop",
-  },
-  {
-    id: 4,
-    title: "Letters I Never Sent",
-    artist: "Alexiao",
-    songs: 24,
-    image:
-      "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=200&h=200&fit=crop",
-  },
-  {
-    id: 5,
-    title: "Breaking the Silence",
-    artist: "Alexiao",
-    songs: 24,
-    image:
-      "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=200&h=200&fit=crop",
-  },
-  {
-    id: 6,
-    title: "Tears on the Vinyl",
-    artist: "Alexiao",
-    songs: 24,
-    image:
-      "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&h=200&fit=crop",
-  },
-];
-
 const SearchScreen = () => {
   const [searchQuery, setSearchQuery] = useState("");
-  const [submittedQuery, setSubmittedQuery] = useState("");
+  const [songs, setSongs] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Filter albums based on submitted search query
-  const filteredAlbums = albums.filter((album) =>
-    album.title.toLowerCase().includes(submittedQuery.toLowerCase())
-  );
+  // Fetch default songs
+  const fetchDefaultSongs = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch("/musicdata");
+      const data = await res.json();
+      if (Array.isArray(data.response)) {
+        setSongs(data.response);
+      } else {
+        console.error("Unexpected API format:", data);
+        setSongs([]);
+      }
+    } catch (err) {
+      console.error("Error fetching music data:", err);
+      setSongs([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const handleSearchSubmit = () => {
-    setSubmittedQuery(searchQuery);
+  // Initial fetch
+  useEffect(() => {
+    fetchDefaultSongs();
+  }, []);
+
+  // Search (POST request)
+  const handleSearchSubmit = async () => {
+    if (!searchQuery.trim()) {
+      // if input empty → reload default list
+      fetchDefaultSongs();
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await fetch("/musicdata", {
+        method: "POST",
+        body: JSON.stringify({ query: searchQuery }),
+      });
+      const data = await response.json();
+      if (Array.isArray(data.response)) {
+        setSongs(data.response); // replace old songs
+      } else {
+        console.error("Unexpected API format:", data);
+        setSongs([]);
+      }
+    } catch (err) {
+      console.error("Error searching music:", err);
+      setSongs([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -96,7 +92,12 @@ const SearchScreen = () => {
 
       {/* Search Bar */}
       <View style={styles.searchContainer}>
-        <Ionicons name="search" size={20} color="#999" style={{ marginLeft: 12 }} />
+        <Ionicons
+          name="search"
+          size={20}
+          color="#999"
+          style={{ marginLeft: 12 }}
+        />
         <TextInput
           placeholder="Search songs, albums, artists..."
           placeholderTextColor="#999"
@@ -106,23 +107,37 @@ const SearchScreen = () => {
           onSubmitEditing={handleSearchSubmit}
           returnKeyType="search"
         />
-        <TouchableOpacity style={styles.submitButton} onPress={handleSearchSubmit}>
+        <TouchableOpacity
+          style={styles.submitButton}
+          onPress={handleSearchSubmit}
+        >
           <Ionicons name="arrow-forward-circle" size={28} color="#C4F34A" />
         </TouchableOpacity>
       </View>
 
-      {/* Album List */}
+      {/* Song List */}
       <ScrollView style={styles.albumList} showsVerticalScrollIndicator={false}>
-        {filteredAlbums.length > 0 ? (
-          filteredAlbums.map((album) => (
-            <TouchableOpacity key={album.id} style={styles.albumItem}>
-              <Image source={{ uri: album.image }} style={styles.albumImage} />
+        {loading ? (
+          <ActivityIndicator
+            size="large"
+            color="#C4F34A"
+            style={{ marginTop: 40 }}
+          />
+        ) : songs.length > 0 ? (
+          songs.map((song) => (
+            <TouchableOpacity key={song.videoId} style={styles.albumItem}>
+              <Image
+                source={{
+                  uri: song.thumbnails?.[1]?.url || song.thumbnails?.[0]?.url,
+                }}
+                style={styles.albumImage}
+              />
               <View style={styles.albumInfo}>
-                <Text style={styles.albumTitle}>{album.title}</Text>
+                <Text style={styles.albumTitle}>{song.name}</Text>
                 <View style={styles.albumMeta}>
-                  <Text style={styles.albumArtist}>By {album.artist}</Text>
+                  <Text style={styles.albumArtist}>By {song.artist?.name}</Text>
                   <Text style={styles.albumDot}>•</Text>
-                  <Text style={styles.albumSongs}>{album.songs} Songs</Text>
+                  <Text style={styles.albumSongs}>{song.album?.name}</Text>
                 </View>
               </View>
               <TouchableOpacity style={styles.playButton}>
@@ -132,7 +147,9 @@ const SearchScreen = () => {
           ))
         ) : (
           <View style={styles.noResults}>
-            <Text style={{ color: "#999", fontSize: 16 }}>No results found</Text>
+            <Text style={{ color: "#999", fontSize: 16 }}>
+              No results found
+            </Text>
           </View>
         )}
       </ScrollView>
@@ -173,15 +190,23 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginLeft: 8,
   },
-  submitButton: {
-    marginRight: 8,
-  },
+  submitButton: { marginRight: 8 },
   albumList: { flex: 1, paddingHorizontal: 20, marginTop: 8 },
   albumItem: { flexDirection: "row", alignItems: "center", marginBottom: 20 },
-  albumImage: { width: 90, height: 90, borderRadius: 16, backgroundColor: "#222" },
+  albumImage: {
+    width: 90,
+    height: 90,
+    borderRadius: 16,
+    backgroundColor: "#222",
+  },
   albumInfo: { flex: 1, marginLeft: 16 },
-  albumTitle: { fontSize: 18, fontWeight: "600", color: "#fff", marginBottom: 6 },
-  albumMeta: { flexDirection: "row", alignItems: "center" },
+  albumTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#fff",
+    marginBottom: 6,
+  },
+  albumMeta: { flexDirection: "row", alignItems: "center", flexWrap: "wrap" },
   albumArtist: { fontSize: 15, color: "#999" },
   albumDot: { fontSize: 15, color: "#999", marginHorizontal: 8 },
   albumSongs: { fontSize: 15, color: "#999" },
@@ -194,27 +219,12 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginLeft: 12,
   },
-  miniPlayer: {
-    position: "absolute",
-    bottom: 30,
-    left: "50%",
-    transform: [{ translateX: -100 }],
-    width: 200,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: "rgba(50, 50, 50, 0.95)",
+  noResults: {
+    flex: 1,
     alignItems: "center",
     justifyContent: "center",
+    marginTop: 40,
   },
-  miniPlayerControls: { flexDirection: "row", alignItems: "center" },
-  miniPlayerButton: { padding: 12 },
-  miniPlayerDivider: {
-    width: 1,
-    height: 24,
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
-    marginHorizontal: 8,
-  },
-  noResults: { flex: 1, alignItems: "center", justifyContent: "center", marginTop: 40 },
 });
 
 export default SearchScreen;
