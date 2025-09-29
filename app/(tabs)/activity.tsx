@@ -14,15 +14,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 // Static albums list for "All" fallback (optional, can be removed if only want dynamic)
-const albums = [
-  {
-    id: 1,
-    title: "Starlit Reverie",
-    artist: "Budiarti",
-    songs: 8,
-    image:
-      "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&h=200&fit=crop",
-  },
+const albums: string | any[] = [
   // ... more static data
 ];
 
@@ -182,7 +174,20 @@ const ActivityScreen = () => {
                 </View>
               </View>
               <TouchableOpacity style={styles.playButton}>
+                  <Link
+                  href={{
+                    pathname: "/player/[id]",
+                    params: {
+                      id: album.id,
+                      thumbnails: album.image,
+                      name: album.title,
+                      artistName: album.artist,
+                      albumName: album.title,
+                    },
+                  }}
+                >
                 <Ionicons name="play" size={20} color="#fff" />
+                </Link>
               </TouchableOpacity>
             </TouchableOpacity>
           ))
