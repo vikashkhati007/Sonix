@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Link } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
@@ -23,20 +24,20 @@ const SearchScreen = () => {
   const fetchDefaultSongs = async () => {
     setLoading(true);
     try {
-      const res = await fetch("/musicdata");
-      const data = await res.json();
-      if (Array.isArray(data.response)) {
-        setSongs(data.response);
-      } else {
-        console.error("Unexpected API format:", data);
-        setSongs([]);
-      }
-    } catch (err) {
-      console.error("Error fetching music data:", err);
+      const storedRecentSongs = await AsyncStorage.getItem("recentSongs");
+      const recent = storedRecentSongs ? JSON.parse(storedRecentSongs) : [];
+      const mapped = recent.map((item: any) => ({
+        videoId: item.id,
+        thumbnails: [{ url: item.thumbnails }, { url: item.thumbnails }],
+        name: item.name,
+        artist: { name: item.artistName },
+        album: { name: item.albumName },
+      }));
+      setSongs(mapped);
+    } catch (e) {
       setSongs([]);
-    } finally {
-      setLoading(false);
     }
+    setLoading(false);
   };
 
   // Initial fetch
@@ -86,7 +87,8 @@ const SearchScreen = () => {
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Search Music</Text>
         <TouchableOpacity style={styles.iconButton}>
-          <Ionicons name="ellipsis-horizontal" size={24} color="#fff" />
+          {/* Filter Icon */}
+          <Ionicons name="filter-outline" size={24} color="#fff" />
         </TouchableOpacity>
       </View>
 
