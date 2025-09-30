@@ -5,6 +5,7 @@ import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Image,
+  Modal,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -19,6 +20,8 @@ const SearchScreen = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [songs, setSongs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [filterVisible, setFilterVisible] = useState(false);
+  const [filterType, setFilterType] = useState("default");
 
   // Fetch default songs
   const fetchDefaultSongs = async () => {
@@ -32,6 +35,7 @@ const SearchScreen = () => {
         name: item.name,
         artist: { name: item.artistName },
         album: { name: item.albumName },
+        addedAt: item.addedAt || Date.now(), // track recent
       }));
       setSongs(mapped);
     } catch (e) {
@@ -48,7 +52,6 @@ const SearchScreen = () => {
   // Search (POST request)
   const handleSearchSubmit = async () => {
     if (!searchQuery.trim()) {
-      // if input empty → reload default list
       fetchDefaultSongs();
       return;
     }
@@ -61,7 +64,7 @@ const SearchScreen = () => {
       });
       const data = await response.json();
       if (Array.isArray(data.response)) {
-        setSongs(data.response); // replace old songs
+        setSongs(data.response);
       } else {
         console.error("Unexpected API format:", data);
         setSongs([]);
@@ -72,6 +75,32 @@ const SearchScreen = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Apply filter
+  const applyFilter = (type: string) => {
+    setFilterType(type);
+    let sortedSongs = [...songs];
+
+    switch (type) {
+      case "a-z":
+        sortedSongs.sort((a, b) => a.name.localeCompare(b.name));
+        break;
+      case "z-a":
+        sortedSongs.sort((a, b) => b.name.localeCompare(a.name));
+        break;
+      case "artist":
+        sortedSongs.sort((a, b) =>
+          (a.artist?.name || "").localeCompare(b.artist?.name || "")
+        );
+        break;
+      default:
+        // keep as is
+        break;
+    }
+
+    setSongs(sortedSongs);
+    setFilterVisible(false);
   };
 
   return (
@@ -86,8 +115,10 @@ const SearchScreen = () => {
           </Link>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Search Music</Text>
-        <TouchableOpacity style={styles.iconButton}>
-          {/* Filter Icon */}
+        <TouchableOpacity
+          style={styles.iconButton}
+          onPress={() => setFilterVisible(true)}
+        >
           <Ionicons name="filter-outline" size={24} color="#fff" />
         </TouchableOpacity>
       </View>
@@ -168,6 +199,37 @@ const SearchScreen = () => {
           </View>
         )}
       </ScrollView>
+
+      {/* Filter Modal */}
+      <Modal
+        visible={filterVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setFilterVisible(false)}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          onPress={() => setFilterVisible(false)}
+          activeOpacity={1}
+        >
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Sort Songs</Text>
+            {[
+              { label: "A - Z", value: "a-z" },
+              { label: "Z - A", value: "z-a" },
+              { label: "By Artist", value: "artist" },
+            ].map((option) => (
+              <TouchableOpacity
+                key={option.value}
+                style={styles.modalOption}
+                onPress={() => applyFilter(option.value)}
+              >
+                <Text style={styles.modalOptionText}>{option.label}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -240,6 +302,20 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginTop: 40,
   },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.6)",
+    justifyContent: "center",
+    padding: 32,
+  },
+  modalContent: {
+    backgroundColor: "#222",
+    borderRadius: 16,
+    padding: 20,
+  },
+  modalTitle: { fontSize: 18, fontWeight: "600", color: "#fff", marginBottom: 12 },
+  modalOption: { paddingVertical: 12 },
+  modalOptionText: { fontSize: 16, color: "#C4F34A" },
 });
 
 export default SearchScreen;
