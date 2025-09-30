@@ -1,18 +1,30 @@
 import { Feather, Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Audio } from "expo-av";
-import { Link } from "expo-router";
+import { Link, useRouter } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
 import {
+  ActivityIndicator,
   Alert,
+  FlatList,
   Image,
   ImageBackground,
+  Modal,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
 import { Slider } from "react-native-elements";
+
+interface Playlist {
+  id: string;
+  name: string;
+  songs: any[];
+  createdAt: string;
+  thumbnail?: string;
+}
 
 export default function PlayerScreen({
   id,
@@ -32,22 +44,34 @@ export default function PlayerScreen({
   const [likedSongs, setLikedSongs] = useState<any[]>([]);
   const [downloadLink, setDownloadLink] = useState("");
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [duration, setDuration] = useState(0);
   const [position, setPosition] = useState(0);
+  const [showPlaylist, setShowPlaylist] = useState(false);
+  const [showAddToPlaylist, setShowAddToPlaylist] = useState(false);
+  const [playlist, setPlaylist] = useState<any[]>([]);
 
   const soundRef = useRef<Audio.Sound | null>(null);
+  const router = useRouter();
 
-  // Fetch Request to get song link
+  // Fetch Request to get song link - Optimized for fast loading
   useEffect(() => {
     (async () => {
       try {
+        setIsLoading(true);
         const result = await fetch("/download?id=" + id);
         if (!result.ok) throw new Error("Network response was not ok");
         const data = await result.json();
         setDownloadLink(data.response.directLink);
+        
+        // Auto-load and play immediately after getting link
+        if (data.response.directLink) {
+          await loadAndPlayImmediately(data.response.directLink);
+        }
       } catch (error) {
         console.error("Failed to fetch download link:", error);
         Alert.alert("Error", "Failed to fetch download link.");
+        setIsLoading(false);
       }
     })();
   }, [id]);
@@ -62,9 +86,10 @@ export default function PlayerScreen({
     };
   }, [id]);
 
-  // Load liked songs
+  // Load liked songs and playlist
   useEffect(() => {
     loadLikedSongs();
+    loadPlaylist();
   }, []);
 
   // Save to recent songs on song change
@@ -86,6 +111,17 @@ export default function PlayerScreen({
       }
     } catch (error) {
       console.error("Error loading liked songs:", error);
+    }
+  };
+
+  const loadPlaylist = async () => {
+    try {
+      const storedPlaylist = await AsyncStorage.getItem("currentPlaylist");
+      if (storedPlaylist) {
+        setPlaylist(JSON.parse(storedPlaylist));
+      }
+    } catch (error) {
+      console.error("Error loading playlist:", error);
     }
   };
 
@@ -143,20 +179,41 @@ export default function PlayerScreen({
     }
   };
 
-  // --- Audio controls ---
+  // --- Audio controls with fast loading ---
+  const loadAndPlayImmediately = async (link: string) => {
+    try {
+      setIsLoading(true);
+      if (soundRef.current) {
+        await soundRef.current.unloadAsync();
+        soundRef.current = null;
+      }
+      
+      // Set audio mode for better performance
+      await Audio.setAudioModeAsync({
+        playsInSilentModeIOS: true,
+        staysActiveInBackground: true,
+        shouldDuckAndroid: true,
+      });
+
+      const { sound } = await Audio.Sound.createAsync(
+        { uri: link },
+        { shouldPlay: true, progressUpdateIntervalMillis: 500 },
+        onPlaybackStatusUpdate
+      );
+      
+      soundRef.current = sound;
+      setIsPlaying(true);
+      setIsLoading(false);
+    } catch (error) {
+      console.error("Error loading audio:", error);
+      setIsLoading(false);
+      Alert.alert("Error", "Failed to load audio");
+    }
+  };
+
   const loadAndPlay = async () => {
     if (!downloadLink) return;
-    if (soundRef.current) {
-      await soundRef.current.unloadAsync();
-      soundRef.current = null;
-    }
-    const { sound } = await Audio.Sound.createAsync(
-      { uri: downloadLink },
-      { shouldPlay: true },
-      onPlaybackStatusUpdate
-    );
-    soundRef.current = sound;
-    setIsPlaying(true);
+    await loadAndPlayImmediately(downloadLink);
   };
 
   const onPlaybackStatusUpdate = (status: any) => {
@@ -167,21 +224,32 @@ export default function PlayerScreen({
         status.durationMillis ? status.positionMillis / status.durationMillis : 0
       );
       setIsPlaying(status.isPlaying);
+      
+      if (status.didJustFinish) {
+        setIsPlaying(false);
+      }
     }
   };
 
   const togglePlayPause = async () => {
+    if (isLoading) return;
+
     if (!soundRef.current) {
       await loadAndPlay();
       return;
     }
-    const status = await soundRef.current.getStatusAsync();
-    if (status.isLoaded && status.isPlaying) {
-      await soundRef.current.pauseAsync();
-      setIsPlaying(false);
-    } else {
-      await soundRef.current.playAsync();
-      setIsPlaying(true);
+    
+    try {
+      const status = await soundRef.current.getStatusAsync();
+      if (status.isLoaded && status.isPlaying) {
+        await soundRef.current.pauseAsync();
+        setIsPlaying(false);
+      } else {
+        await soundRef.current.playAsync();
+        setIsPlaying(true);
+      }
+    } catch (error) {
+      console.error("Error toggling play/pause:", error);
     }
   };
 
@@ -198,6 +266,36 @@ export default function PlayerScreen({
     const seconds = totalSeconds % 60;
     return `${minutes}:${seconds < 10 ? "0" : ""}${seconds}`;
   };
+
+  const handlePlaylistItemPress = (song: any) => {
+    setShowPlaylist(false);
+    // Navigate to the selected song
+    console.log("Playing song:", song.name);
+  };
+
+  const handleAddToPlaylist = () => {
+    setShowAddToPlaylist(true);
+  };
+
+  const renderPlaylistItem = ({ item }: { item: any }) => (
+    <TouchableOpacity
+      style={[styles.playlistItem, item.id === id && styles.activePlaylistItem]}
+      onPress={() => handlePlaylistItemPress(item)}
+    >
+      <Image source={{ uri: item.thumbnails }} style={styles.playlistThumbnail} />
+      <View style={styles.playlistInfo}>
+        <Text style={styles.playlistSongName} numberOfLines={1}>
+          {item.name}
+        </Text>
+        <Text style={styles.playlistArtistName} numberOfLines={1}>
+          {item.artistName}
+        </Text>
+      </View>
+      {item.id === id && (
+        <MaterialCommunityIcons name="equalizer" size={20} color="#D7FD50" />
+      )}
+    </TouchableOpacity>
+  );
 
   return (
     <View style={styles.container}>
@@ -261,25 +359,264 @@ export default function PlayerScreen({
               <TouchableOpacity
                 style={styles.playBtn}
                 onPress={togglePlayPause}
+                disabled={isLoading}
               >
-                <Feather
-                  name={isPlaying ? "pause" : "play"}
-                  size={34}
-                  color="#000"
-                />
+                {isLoading ? (
+                  <ActivityIndicator size="large" color="#000" />
+                ) : (
+                  <Feather
+                    name={isPlaying ? "pause" : "play"}
+                    size={34}
+                    color="#000"
+                  />
+                )}
               </TouchableOpacity>
               <TouchableOpacity style={styles.controlBtn}>
                 <Feather name="skip-forward" size={32} color="#fff" />
               </TouchableOpacity>
-              <TouchableOpacity style={styles.controlBtn}>
-                <Feather name="music" size={24} color="#fff" />
+              <TouchableOpacity 
+                style={styles.controlBtn}
+                onPress={handleAddToPlaylist}
+              >
+                <MaterialCommunityIcons name="playlist-plus" size={28} color="#fff" />
               </TouchableOpacity>
             </View>
-            {/* <View style={styles.homeIndicator} /> */}
           </View>
         </ImageBackground>
       </View>
+
+      {/* Current Playlist Modal */}
+      <Modal
+        visible={showPlaylist}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowPlaylist(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Current Playlist</Text>
+              <TouchableOpacity onPress={() => setShowPlaylist(false)}>
+                <Ionicons name="close" size={28} color="#fff" />
+              </TouchableOpacity>
+            </View>
+            <FlatList
+              data={playlist}
+              renderItem={renderPlaylistItem}
+              keyExtractor={(item) => item.id}
+              style={styles.playlistList}
+              contentContainerStyle={styles.playlistContent}
+              ListEmptyComponent={
+                <Text style={styles.emptyPlaylist}>No songs in playlist</Text>
+              }
+            />
+          </View>
+        </View>
+      </Modal>
+
+      {/* Add to Playlist Modal */}
+      <AddToPlaylistModal
+        visible={showAddToPlaylist}
+        onClose={() => setShowAddToPlaylist(false)}
+        currentSong={{
+          id,
+          thumbnails,
+          name,
+          artistName,
+          albumName,
+        }}
+      />
     </View>
+  );
+}
+
+// Separate Component for Add to Playlist Modal
+function AddToPlaylistModal({
+  visible,
+  onClose,
+  currentSong,
+}: {
+  visible: boolean;
+  onClose: () => void;
+  currentSong: any;
+}) {
+  const [playlists, setPlaylists] = useState<Playlist[]>([]);
+  const [showCreateNew, setShowCreateNew] = useState(false);
+  const [newPlaylistName, setNewPlaylistName] = useState("");
+
+  useEffect(() => {
+    if (visible) {
+      loadPlaylists();
+    }
+  }, [visible]);
+
+  const loadPlaylists = async () => {
+    try {
+      const stored = await AsyncStorage.getItem("userPlaylists");
+      if (stored) {
+        setPlaylists(JSON.parse(stored));
+      }
+    } catch (error) {
+      console.error("Error loading playlists:", error);
+    }
+  };
+
+  const savePlaylists = async (updatedPlaylists: Playlist[]) => {
+    try {
+      await AsyncStorage.setItem("userPlaylists", JSON.stringify(updatedPlaylists));
+      setPlaylists(updatedPlaylists);
+    } catch (error) {
+      console.error("Error saving playlists:", error);
+    }
+  };
+
+  const createNewPlaylist = async () => {
+    if (!newPlaylistName.trim()) {
+      Alert.alert("Error", "Please enter a playlist name");
+      return;
+    }
+
+    const newPlaylist: Playlist = {
+      id: Date.now().toString(),
+      name: newPlaylistName.trim(),
+      songs: [currentSong],
+      createdAt: new Date().toISOString(),
+      thumbnail: currentSong.thumbnails,
+    };
+
+    const updatedPlaylists = [...playlists, newPlaylist];
+    await savePlaylists(updatedPlaylists);
+    
+    Alert.alert("Success", `Playlist "${newPlaylistName}" created and song added!`);
+    setNewPlaylistName("");
+    setShowCreateNew(false);
+    onClose();
+  };
+
+  const addToExistingPlaylist = async (playlist: Playlist) => {
+    // Check if song already exists in playlist
+    const songExists = playlist.songs.some((song) => song.id === currentSong.id);
+    
+    if (songExists) {
+      Alert.alert("Info", `"${currentSong.name}" is already in "${playlist.name}"`);
+      return;
+    }
+
+    const updatedPlaylist = {
+      ...playlist,
+      songs: [...playlist.songs, currentSong],
+      thumbnail: playlist.songs.length === 0 ? currentSong.thumbnails : playlist.thumbnail,
+    };
+
+    const updatedPlaylists = playlists.map((p) =>
+      p.id === playlist.id ? updatedPlaylist : p
+    );
+
+    await savePlaylists(updatedPlaylists);
+    Alert.alert("Success", `Added to "${playlist.name}"`);
+    onClose();
+  };
+
+  const renderPlaylistItem = ({ item }: { item: Playlist }) => (
+    <TouchableOpacity
+      style={styles.addPlaylistItem}
+      onPress={() => addToExistingPlaylist(item)}
+    >
+      <View style={styles.addPlaylistThumbnailContainer}>
+        {item.thumbnail ? (
+          <Image source={{ uri: item.thumbnail }} style={styles.addPlaylistThumbnail} />
+        ) : (
+          <View style={[styles.addPlaylistThumbnail, styles.placeholderThumbnail]}>
+            <MaterialCommunityIcons name="music-note" size={24} color="#fff" />
+          </View>
+        )}
+      </View>
+      <View style={styles.addPlaylistInfo}>
+        <Text style={styles.addPlaylistName} numberOfLines={1}>
+          {item.name}
+        </Text>
+        <Text style={styles.addPlaylistCount}>
+          {item.songs.length} song{item.songs.length !== 1 ? "s" : ""}
+        </Text>
+      </View>
+      <Feather name="plus" size={24} color="#D7FD50" />
+    </TouchableOpacity>
+  );
+
+  return (
+    <Modal
+      visible={visible}
+      animationType="slide"
+      transparent={true}
+      onRequestClose={onClose}
+    >
+      <View style={styles.modalContainer}>
+        <View style={styles.modalContent}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Add to Playlist</Text>
+            <TouchableOpacity onPress={onClose}>
+              <Ionicons name="close" size={28} color="#fff" />
+            </TouchableOpacity>
+          </View>
+
+          {!showCreateNew ? (
+            <>
+              <TouchableOpacity
+                style={styles.createPlaylistBtn}
+                onPress={() => setShowCreateNew(true)}
+              >
+                <View style={styles.createIconContainer}>
+                  <Feather name="plus" size={24} color="#D7FD50" />
+                </View>
+                <Text style={styles.createPlaylistText}>Create New Playlist</Text>
+              </TouchableOpacity>
+
+              <FlatList
+                data={playlists}
+                renderItem={renderPlaylistItem}
+                keyExtractor={(item) => item.id}
+                style={styles.playlistList}
+                contentContainerStyle={styles.playlistContent}
+                ListEmptyComponent={
+                  <Text style={styles.emptyPlaylist}>
+                    No playlists yet. Create one to get started!
+                  </Text>
+                }
+              />
+            </>
+          ) : (
+            <View style={styles.createNewContainer}>
+              <Text style={styles.createNewTitle}>New Playlist</Text>
+              <TextInput
+                style={styles.playlistInput}
+                placeholder="Enter playlist name"
+                placeholderTextColor="rgba(255,255,255,0.4)"
+                value={newPlaylistName}
+                onChangeText={setNewPlaylistName}
+                autoFocus
+              />
+              <View style={styles.createButtonsRow}>
+                <TouchableOpacity
+                  style={[styles.createBtn, styles.cancelBtn]}
+                  onPress={() => {
+                    setShowCreateNew(false);
+                    setNewPlaylistName("");
+                  }}
+                >
+                  <Text style={styles.cancelBtnText}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.createBtn, styles.confirmBtn]}
+                  onPress={createNewPlaylist}
+                >
+                  <Text style={styles.confirmBtnText}>Create</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
+        </View>
+      </View>
+    </Modal>
   );
 }
 
@@ -331,9 +668,175 @@ const styles = StyleSheet.create({
     shadowColor: "#D7FD50", shadowOpacity: 0.4,
     shadowRadius: 15, shadowOffset: { width: 0, height: 5 },
   },
-  homeIndicator: {
-    height: 5, width: 134, borderRadius: 3,
-    backgroundColor: "#fff", alignSelf: "center",
-    marginBottom: 8, marginTop: 4, opacity: 0.3,
+  modalContainer: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.8)",
+    justifyContent: "flex-end",
+  },
+  modalContent: {
+    backgroundColor: "#1a1a1a",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: "80%",
+    paddingTop: 20,
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingBottom: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(255,255,255,0.1)",
+  },
+  modalTitle: {
+    color: "#fff",
+    fontSize: 20,
+    fontWeight: "700",
+  },
+  playlistList: {
+    flex: 1,
+  },
+  playlistContent: {
+    paddingVertical: 10,
+  },
+  playlistItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    backgroundColor: "transparent",
+  },
+  activePlaylistItem: {
+    backgroundColor: "rgba(215,253,80,0.1)",
+  },
+  playlistThumbnail: {
+    width: 50,
+    height: 50,
+    borderRadius: 8,
+    marginRight: 12,
+  },
+  playlistInfo: {
+    flex: 1,
+    marginRight: 12,
+  },
+  playlistSongName: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "600",
+    marginBottom: 4,
+  },
+  playlistArtistName: {
+    color: "rgba(255,255,255,0.6)",
+    fontSize: 14,
+  },
+  emptyPlaylist: {
+    color: "rgba(255,255,255,0.5)",
+    fontSize: 16,
+    textAlign: "center",
+    marginTop: 40,
+    paddingHorizontal: 40,
+  },
+  createPlaylistBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(255,255,255,0.1)",
+    marginBottom: 10,
+  },
+  createIconContainer: {
+    width: 50,
+    height: 50,
+    borderRadius: 8,
+    backgroundColor: "rgba(215,253,80,0.15)",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 12,
+  },
+  createPlaylistText: {
+    color: "#D7FD50",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  addPlaylistItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+  },
+  addPlaylistThumbnailContainer: {
+    marginRight: 12,
+  },
+  addPlaylistThumbnail: {
+    width: 50,
+    height: 50,
+    borderRadius: 8,
+  },
+  placeholderThumbnail: {
+    backgroundColor: "rgba(255,255,255,0.1)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  addPlaylistInfo: {
+    flex: 1,
+    marginRight: 12,
+  },
+  addPlaylistName: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "600",
+    marginBottom: 4,
+  },
+  addPlaylistCount: {
+    color: "rgba(255,255,255,0.6)",
+    fontSize: 13,
+  },
+  createNewContainer: {
+    padding: 20,
+  },
+  createNewTitle: {
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "600",
+    marginBottom: 20,
+  },
+  playlistInput: {
+    backgroundColor: "rgba(255,255,255,0.1)",
+    borderRadius: 12,
+    padding: 16,
+    color: "#fff",
+    fontSize: 16,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.2)",
+  },
+  createButtonsRow: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  createBtn: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  cancelBtn: {
+    backgroundColor: "rgba(255,255,255,0.1)",
+  },
+  confirmBtn: {
+    backgroundColor: "#D7FD50",
+  },
+  cancelBtnText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  confirmBtnText: {
+    color: "#000",
+    fontSize: 16,
+    fontWeight: "600",
   },
 });

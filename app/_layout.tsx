@@ -19,6 +19,9 @@ export default function RootLayout() {
         {/* Music Player (dynamic route, no tabs) */}
         <Stack.Screen name="player/[id]" options={{ headerShown: false }} />
         {/* Test Screen */}
+        {/* Playlist Screen */}
+        <Stack.Screen name="playlist/playlist" options={{ headerShown: false }} />
+        <Stack.Screen name="playlist/[id]" options={{ headerShown: false }} />
       </Stack>
       <StatusBar style="auto" />
     </ThemeProvider>
