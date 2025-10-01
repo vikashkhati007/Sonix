@@ -3,12 +3,12 @@ import { AntDesign } from "@expo/vector-icons";
 import { SplashScreen } from "expo-router";
 import React, { useEffect } from "react";
 import {
-    Image,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 const playlists = [

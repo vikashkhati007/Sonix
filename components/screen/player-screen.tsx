@@ -50,6 +50,8 @@ export default function PlayerScreen({
   const [showPlaylist, setShowPlaylist] = useState(false);
   const [showAddToPlaylist, setShowAddToPlaylist] = useState(false);
   const [playlist, setPlaylist] = useState<any[]>([]);
+  const [allSongs, setAllSongs] = useState<any[]>([]);
+  const [currentIndex, setCurrentIndex] = useState(-1);
 
   const soundRef = useRef<Audio.Sound | null>(null);
   const router = useRouter();
@@ -59,18 +61,34 @@ export default function PlayerScreen({
     (async () => {
       try {
         setIsLoading(true);
-        const result = await fetch("/download?id=" + id);
-        if (!result.ok) throw new Error("Network response was not ok");
-        const data = await result.json();
-        const link = data.response.directLink;
-        setDownloadLink(link);
         
-        // Save to recent songs with download link
-        await addToRecentSongs(link);
+        // First, check if download link exists in recent songs or liked songs
+        const existingLink = await getExistingDownloadLink(id);
         
-        // Auto-load and play immediately after getting link
-        if (link) {
-          await loadAndPlayImmediately(link);
+        if (existingLink) {
+          // Use existing download link
+          setDownloadLink(existingLink);
+          await addToRecentSongs(existingLink);
+          await loadAllSongs();
+          await loadAndPlayImmediately(existingLink);
+        } else {
+          // Fetch new download link from API
+          const result = await fetch("/download?id=" + id);
+          if (!result.ok) throw new Error("Network response was not ok");
+          const data = await result.json();
+          const link = data.response.directLink;
+          setDownloadLink(link);
+          
+          // Save to recent songs with download link
+          await addToRecentSongs(link);
+          
+          // Reload all songs after adding to recent
+          await loadAllSongs();
+          
+          // Auto-load and play immediately after getting link
+          if (link) {
+            await loadAndPlayImmediately(link);
+          }
         }
       } catch (error) {
         console.error("Failed to fetch download link:", error);
@@ -94,7 +112,14 @@ export default function PlayerScreen({
   useEffect(() => {
     loadLikedSongs();
     loadPlaylist();
+    loadAllSongs();
   }, []);
+
+  // Update current index when song changes
+  useEffect(() => {
+    const index = allSongs.findIndex((song) => song.id === id);
+    setCurrentIndex(index);
+  }, [id, allSongs]);
 
   // Check if song is liked
   useEffect(() => {
@@ -121,6 +146,67 @@ export default function PlayerScreen({
       }
     } catch (error) {
       console.error("Error loading playlist:", error);
+    }
+  };
+
+  const loadAllSongs = async () => {
+    try {
+      const recentSongsStr = await AsyncStorage.getItem("recentSongs");
+      const likedSongsStr = await AsyncStorage.getItem("likedSongs");
+      
+      const recentSongs = recentSongsStr ? JSON.parse(recentSongsStr) : [];
+      const likedSongs = likedSongsStr ? JSON.parse(likedSongsStr) : [];
+      
+      // Combine recent and liked songs, remove duplicates based on id
+      const combinedSongs = [...recentSongs, ...likedSongs];
+      const uniqueSongs = Array.from(
+        new Map(combinedSongs.map((song) => [song.id, song])).values()
+      );
+      
+      setAllSongs(uniqueSongs);
+    } catch (error) {
+      console.error("Error loading all songs:", error);
+    }
+  };
+
+  const getExistingDownloadLink = async (songId: string): Promise<string | null> => {
+    try {
+      // Check in recent songs
+      const recentSongsStr = await AsyncStorage.getItem("recentSongs");
+      if (recentSongsStr) {
+        const recentSongs = JSON.parse(recentSongsStr);
+        const song = recentSongs.find((s: any) => s.id === songId);
+        if (song && song.downloadLink) {
+          return song.downloadLink;
+        }
+      }
+
+      // Check in liked songs
+      const likedSongsStr = await AsyncStorage.getItem("likedSongs");
+      if (likedSongsStr) {
+        const likedSongs = JSON.parse(likedSongsStr);
+        const song = likedSongs.find((s: any) => s.id === songId);
+        if (song && song.downloadLink) {
+          return song.downloadLink;
+        }
+      }
+
+      // Check in user playlists
+      const playlistsStr = await AsyncStorage.getItem("userPlaylists");
+      if (playlistsStr) {
+        const playlists = JSON.parse(playlistsStr);
+        for (const playlist of playlists) {
+          const song = playlist.songs.find((s: any) => s.id === songId);
+          if (song && song.downloadLink) {
+            return song.downloadLink;
+          }
+        }
+      }
+
+      return null;
+    } catch (error) {
+      console.error("Error checking existing download link:", error);
+      return null;
     }
   };
 
@@ -156,6 +242,9 @@ export default function PlayerScreen({
     setLikedSongs(updatedLikedSongs);
     await saveLikedSongs(updatedLikedSongs);
     setIsLiked(!isLiked);
+    
+    // Reload all songs after updating liked songs
+    await loadAllSongs();
   };
 
   const addToRecentSongs = async (link: string) => {
@@ -268,6 +357,78 @@ export default function PlayerScreen({
     return `${minutes}:${seconds < 10 ? "0" : ""}${seconds}`;
   };
 
+  const handleSkipForward = async () => {
+    if (allSongs.length === 0) {
+      Alert.alert("No Songs", "No songs available to skip to");
+      return;
+    }
+
+    // Stop current audio before navigating
+    if (soundRef.current) {
+      try {
+        await soundRef.current.stopAsync();
+        await soundRef.current.unloadAsync();
+        soundRef.current = null;
+        setIsPlaying(false);
+      } catch (error) {
+        console.error("Error stopping audio:", error);
+      }
+    }
+
+    const nextIndex = (currentIndex + 1) % allSongs.length;
+    const nextSong = allSongs[nextIndex];
+    
+    if (nextSong && nextSong.downloadLink) {
+      // Navigate to next song - adjust pathname based on your routing
+      router.push({
+        pathname: "/player/[id]",
+        params: {
+          id: nextSong.id,
+          thumbnails: nextSong.thumbnails,
+          name: nextSong.name,
+          artistName: nextSong.artistName,
+          albumName: nextSong.albumName,
+        },
+      });
+    }
+  };
+
+  const handleSkipBackward = async () => {
+    if (allSongs.length === 0) {
+      Alert.alert("No Songs", "No songs available to skip to");
+      return;
+    }
+
+    // Stop current audio before navigating
+    if (soundRef.current) {
+      try {
+        await soundRef.current.stopAsync();
+        await soundRef.current.unloadAsync();
+        soundRef.current = null;
+        setIsPlaying(false);
+      } catch (error) {
+        console.error("Error stopping audio:", error);
+      }
+    }
+
+    const prevIndex = currentIndex - 1 < 0 ? allSongs.length - 1 : currentIndex - 1;
+    const prevSong = allSongs[prevIndex];
+    
+    if (prevSong && prevSong.downloadLink) {
+      // Navigate to previous song - adjust pathname based on your routing
+      router.push({
+        pathname: "/player/[id]",
+        params: {
+          id: prevSong.id,
+          thumbnails: prevSong.thumbnails,
+          name: prevSong.name,
+          artistName: prevSong.artistName,
+          albumName: prevSong.albumName,
+        },
+      });
+    }
+  };
+
   const handlePlaylistItemPress = (song: any) => {
     setShowPlaylist(false);
     // Navigate to the selected song
@@ -354,7 +515,11 @@ export default function PlayerScreen({
               <TouchableOpacity style={styles.controlBtn}>
                 <MaterialCommunityIcons name="shuffle" size={26} color="#fff" />
               </TouchableOpacity>
-              <TouchableOpacity style={styles.controlBtn}>
+              <TouchableOpacity 
+                style={styles.controlBtn}
+                onPress={handleSkipBackward}
+                disabled={allSongs.length === 0}
+              >
                 <Feather name="skip-back" size={32} color="#fff" />
               </TouchableOpacity>
               <TouchableOpacity
@@ -372,7 +537,11 @@ export default function PlayerScreen({
                   />
                 )}
               </TouchableOpacity>
-              <TouchableOpacity style={styles.controlBtn}>
+              <TouchableOpacity 
+                style={styles.controlBtn}
+                onPress={handleSkipForward}
+                disabled={allSongs.length === 0}
+              >
                 <Feather name="skip-forward" size={32} color="#fff" />
               </TouchableOpacity>
               <TouchableOpacity 
