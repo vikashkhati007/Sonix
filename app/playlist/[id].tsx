@@ -2,17 +2,17 @@ import { ThemedText } from "@/components/themed-text";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { LinearGradient } from "expo-linear-gradient";
-import { useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
-    Dimensions,
-    FlatList,
-    Image,
-    ImageBackground,
-    StatusBar,
-    StyleSheet,
-    TouchableOpacity,
-    View,
+  Dimensions,
+  FlatList,
+  Image,
+  ImageBackground,
+  StatusBar,
+  StyleSheet,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -22,6 +22,7 @@ type Song = {
   name: string;
   artistName: string;
   albumName: string;
+  downloadLink?: string;
 };
 
 type Playlist = {
@@ -37,6 +38,7 @@ const { width } = Dimensions.get("window");
 const PlaylistPage = () => {
   const { id } = useLocalSearchParams() as { id: string };
   const [playlist, setPlaylist] = useState<Playlist | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
     const loadPlaylist = async () => {
@@ -54,6 +56,27 @@ const PlaylistPage = () => {
 
     loadPlaylist();
   }, [id]);
+
+  const handlePlaySong = (song: Song) => {
+    router.push({
+      pathname: "/player/[id]",
+      params: {
+        id: song.id,
+        thumbnails: song.thumbnails,
+        name: song.name,
+        artistName: song.artistName,
+        albumName: song.albumName,
+        playlistId: playlist?.id, // Pass the playlist ID
+      },
+    });
+  };
+
+  const handlePlayAll = () => {
+    if (playlist && playlist.songs.length > 0) {
+      // Play the first song in the playlist
+      handlePlaySong(playlist.songs[0]);
+    }
+  };
 
   if (!playlist) {
     return (
@@ -88,7 +111,11 @@ const PlaylistPage = () => {
                 {playlist.songs.length}{" "}
                 {playlist.songs.length === 1 ? "song" : "songs"}
               </ThemedText>
-              <TouchableOpacity style={styles.playButton}>
+              <TouchableOpacity 
+                style={styles.playButton}
+                onPress={handlePlayAll}
+                disabled={playlist.songs.length === 0}
+              >
                 <Ionicons name="play-circle" size={64} color="#D7FD50" />
               </TouchableOpacity>
             </View>
@@ -101,7 +128,11 @@ const PlaylistPage = () => {
             contentContainerStyle={{ paddingBottom: 40 }}
             ItemSeparatorComponent={() => <View style={styles.separator} />}
             renderItem={({ item, index }) => (
-              <TouchableOpacity style={styles.songRow} activeOpacity={0.7}>
+              <TouchableOpacity 
+                style={styles.songRow} 
+                activeOpacity={0.7}
+                onPress={() => handlePlaySong(item)}
+              >
                 <ThemedText style={styles.index}>{index + 1}</ThemedText>
                 <Image
                   source={{ uri: item.thumbnails }}
@@ -115,8 +146,16 @@ const PlaylistPage = () => {
                     {item.artistName} • {item.albumName}
                   </ThemedText>
                 </View>
+                <Ionicons name="play" size={20} color="rgba(255,255,255,0.4)" />
               </TouchableOpacity>
             )}
+            ListEmptyComponent={
+              <View style={styles.emptyContainer}>
+                <ThemedText style={styles.emptyText}>
+                  No songs in this playlist yet
+                </ThemedText>
+              </View>
+            }
           />
         </SafeAreaView>
       </LinearGradient>
@@ -157,8 +196,7 @@ const styles = StyleSheet.create({
     color: "rgba(255,255,255,0.6)",
     marginTop: 4,
   },
-  playButton: {
-  },
+  playButton: {},
   separator: {
     height: 1,
     backgroundColor: "rgba(255,255,255,0.08)",
@@ -167,6 +205,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     paddingVertical: 8,
+    paddingRight: 16,
   },
   index: {
     width: 24,
@@ -194,6 +233,14 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: "rgba(255,255,255,0.6)",
     marginTop: 2,
+  },
+  emptyContainer: {
+    paddingVertical: 40,
+    alignItems: "center",
+  },
+  emptyText: {
+    fontSize: 16,
+    color: "rgba(255,255,255,0.5)",
   },
 });
 

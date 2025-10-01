@@ -1,8 +1,8 @@
 import { Feather, Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Audio } from "expo-av";
-import { Link, useRouter } from "expo-router";
-import React, { useEffect, useRef, useState } from "react";
+import { Link } from "expo-router";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -32,137 +32,261 @@ export default function PlayerScreen({
   name,
   artistName,
   albumName,
+  playlistId = "",
 }: {
   id: string;
   thumbnails: string;
   name: string;
   artistName: string;
   albumName: string;
+  playlistId?: string;
 }) {
-  const [progress, setProgress] = useState(0);
-  const [isLiked, setIsLiked] = useState(false);
+  const [allSongs, setAllSongs] = useState<any[]>([]);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [currentSong, setCurrentSong] = useState({
+    id,
+    thumbnails,
+    name,
+    artistName,
+    albumName,
+    downloadLink: "",
+  });
+
+  const [playlist, setPlaylist] = useState<any[]>([]);
   const [likedSongs, setLikedSongs] = useState<any[]>([]);
-  const [downloadLink, setDownloadLink] = useState("");
+  const [isLiked, setIsLiked] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [duration, setDuration] = useState(0);
   const [position, setPosition] = useState(0);
+  const [progress, setProgress] = useState(0);
   const [showPlaylist, setShowPlaylist] = useState(false);
   const [showAddToPlaylist, setShowAddToPlaylist] = useState(false);
-  const [playlist, setPlaylist] = useState<any[]>([]);
-  const [allSongs, setAllSongs] = useState<any[]>([]);
-  const [currentIndex, setCurrentIndex] = useState(-1);
 
   const soundRef = useRef<Audio.Sound | null>(null);
-  const router = useRouter();
 
-  // Fetch Request to get song link - Optimized for fast loading
+  // 1. Load everything on mount
   useEffect(() => {
+    loadLikedSongs();
+    loadPlaylist();
+    loadAllSongs();
+  }, [id, playlistId]);
+
+  // 2. Set initial song from props
+  useEffect(() => {
+    setCurrentSong({
+      id,
+      thumbnails,
+      name,
+      artistName,
+      albumName,
+      downloadLink: "",
+    });
+  }, [id, thumbnails, name, artistName, albumName]);
+
+  // 3. Set correct index for the current song (only on initial or external song selection)
+  useEffect(() => {
+    const idx = allSongs.findIndex((song) => song.id === currentSong.id);
+    if (idx !== -1) setCurrentIndex(idx);
+  }, [currentSong.id, allSongs]);
+
+  // 4. Update liked state for current song
+  useEffect(() => {
+    setIsLiked(likedSongs.some((song) => song.id === currentSong.id));
+  }, [likedSongs, currentSong.id]);
+
+  // 5. Audio player effect (fetch link, play, cleanup)
+  useEffect(() => {
+    let isMounted = true;
     (async () => {
+      if (soundRef.current) {
+        try { await soundRef.current.stopAsync(); } catch {}
+        try { await soundRef.current.unloadAsync(); } catch {}
+        soundRef.current = null;
+      }
+      setIsPlaying(false);
+
       try {
         setIsLoading(true);
-        
-        // First, check if download link exists in recent songs or liked songs
-        const existingLink = await getExistingDownloadLink(id);
-        
+        const existingLink = await getExistingDownloadLink(currentSong.id);
+        if (!isMounted) return;
         if (existingLink) {
-          // Use existing download link
-          setDownloadLink(existingLink);
-          await addToRecentSongs(existingLink);
+          setCurrentSong((prev) => ({ ...prev, downloadLink: existingLink }));
+          await addToRecentSongs(existingLink, currentSong);
           await loadAllSongs();
           await loadAndPlayImmediately(existingLink);
         } else {
-          // Fetch new download link from API
-          const result = await fetch("/download?id=" + id);
+          const result = await fetch("/download?id=" + currentSong.id);
           if (!result.ok) throw new Error("Network response was not ok");
           const data = await result.json();
           const link = data.response.directLink;
-          setDownloadLink(link);
-          
-          // Save to recent songs with download link
-          await addToRecentSongs(link);
-          
-          // Reload all songs after adding to recent
+          setCurrentSong((prev) => ({ ...prev, downloadLink: link }));
+          await addToRecentSongs(link, currentSong);
           await loadAllSongs();
-          
-          // Auto-load and play immediately after getting link
-          if (link) {
-            await loadAndPlayImmediately(link);
-          }
+          if (link) await loadAndPlayImmediately(link);
         }
       } catch (error) {
         console.error("Failed to fetch download link:", error);
-        Alert.alert("Error", "Failed to fetch download link.");
+        if (isMounted) Alert.alert("Error", "Failed to fetch download link.");
         setIsLoading(false);
       }
     })();
-  }, [id]);
-
-  // Cleanup old sound when id changes
-  useEffect(() => {
     return () => {
+      isMounted = false;
       if (soundRef.current) {
         soundRef.current.unloadAsync();
         soundRef.current = null;
       }
     };
-  }, [id]);
+  }, [currentSong.id]);
 
-  // Load liked songs and playlist
-  useEffect(() => {
-    loadLikedSongs();
-    loadPlaylist();
-    loadAllSongs();
-  }, []);
+  // --- Core player handlers (NO useEffect to sync index to song, see below!) ---
+  const handleSkipForward = useCallback(async () => {
+    if (!allSongs.length) return;
+    let nextIndex = (currentIndex + 1) % allSongs.length;
+    const song = allSongs[nextIndex];
+    if (song) {
+      setCurrentIndex(nextIndex);
+      setCurrentSong({
+        id: song.id,
+        thumbnails: song.thumbnails,
+        name: song.name,
+        artistName: song.artistName,
+        albumName: song.albumName,
+        downloadLink: song.downloadLink || "",
+      });
+    }
+  }, [allSongs, currentIndex]);
 
-  // Update current index when song changes
-  useEffect(() => {
-    const index = allSongs.findIndex((song) => song.id === id);
-    setCurrentIndex(index);
-  }, [id, allSongs]);
+  const handleSkipBackward = useCallback(async () => {
+    if (!allSongs.length) return;
+    let prevIndex = currentIndex - 1;
+    if (prevIndex < 0) prevIndex = allSongs.length - 1;
+    const song = allSongs[prevIndex];
+    if (song) {
+      setCurrentIndex(prevIndex);
+      setCurrentSong({
+        id: song.id,
+        thumbnails: song.thumbnails,
+        name: song.name,
+        artistName: song.artistName,
+        albumName: song.albumName,
+        downloadLink: song.downloadLink || "",
+      });
+    }
+  }, [allSongs, currentIndex]);
 
-  // Check if song is liked
-  useEffect(() => {
-    const songIsLiked = likedSongs.some((song) => song.id === id);
-    setIsLiked(songIsLiked);
-  }, [likedSongs, id]);
+  const handlePlaylistItemPress = (song: any) => {
+    const idx = allSongs.findIndex((s) => s.id === song.id);
+    if (idx !== -1) {
+      setCurrentIndex(idx);
+      setCurrentSong({
+        id: song.id,
+        thumbnails: song.thumbnails,
+        name: song.name,
+        artistName: song.artistName,
+        albumName: song.albumName,
+        downloadLink: song.downloadLink || "",
+      });
+      setShowPlaylist(false);
+    }
+  };
+
+  // --- Like, playlist, and storage helpers (same as before) ---
+
+  const saveLikedSongs = async (songs: any[]) => {
+    try { await AsyncStorage.setItem("likedSongs", JSON.stringify(songs)); }
+    catch (error) { console.error("Error saving liked songs:", error); }
+  };
+
+  const handleLikePress = async () => {
+    const songToLike = {
+      id: currentSong.id,
+      thumbnails: currentSong.thumbnails,
+      name: currentSong.name,
+      artistName: currentSong.artistName,
+      albumName: currentSong.albumName,
+      downloadLink: currentSong.downloadLink,
+      likedAt: new Date().toISOString(),
+    };
+    let updatedLikedSongs;
+    if (isLiked) {
+      updatedLikedSongs = likedSongs.filter((song) => song.id !== currentSong.id);
+      Alert.alert("Removed", `"${currentSong.name}" removed from liked songs`);
+    } else {
+      updatedLikedSongs = [...likedSongs, songToLike];
+      Alert.alert("Added", `"${currentSong.name}" added to liked songs`);
+    }
+    setLikedSongs(updatedLikedSongs);
+    await saveLikedSongs(updatedLikedSongs);
+    setIsLiked(!isLiked);
+    await loadAllSongs();
+  };
+
+  const addToRecentSongs = async (link: string, song: typeof currentSong) => {
+    try {
+      const songData = {
+        id: song.id,
+        thumbnails: song.thumbnails,
+        name: song.name,
+        artistName: song.artistName,
+        albumName: song.albumName,
+        downloadLink: link,
+        playedAt: new Date().toISOString(),
+      };
+      const stored = await AsyncStorage.getItem("recentSongs");
+      let arr = stored ? JSON.parse(stored) : [];
+      arr = arr.filter((s: any) => s.id !== song.id);
+      arr.unshift(songData);
+      if (arr.length > 50) arr = arr.slice(0, 50);
+      await AsyncStorage.setItem("recentSongs", JSON.stringify(arr));
+    } catch (e) { console.error("Error saving recent song:", e); }
+  };
 
   const loadLikedSongs = async () => {
-    try {
+    try { 
       const storedLikedSongs = await AsyncStorage.getItem("likedSongs");
-      if (storedLikedSongs) {
-        setLikedSongs(JSON.parse(storedLikedSongs));
-      }
-    } catch (error) {
-      console.error("Error loading liked songs:", error);
-    }
+      if (storedLikedSongs) setLikedSongs(JSON.parse(storedLikedSongs));
+    } catch (error) { console.error("Error loading liked songs:", error); }
   };
 
   const loadPlaylist = async () => {
     try {
       const storedPlaylist = await AsyncStorage.getItem("currentPlaylist");
-      if (storedPlaylist) {
-        setPlaylist(JSON.parse(storedPlaylist));
-      }
-    } catch (error) {
-      console.error("Error loading playlist:", error);
-    }
+      if (storedPlaylist) setPlaylist(JSON.parse(storedPlaylist));
+    } catch (error) { console.error("Error loading playlist:", error); }
   };
 
   const loadAllSongs = async () => {
     try {
+      if (playlistId) {
+        const playlistsStr = await AsyncStorage.getItem("userPlaylists");
+        if (playlistsStr) {
+          const playlists = JSON.parse(playlistsStr);
+          const currentPlaylist = playlists.find((p: Playlist) => p.id === playlistId);
+          if (currentPlaylist && currentPlaylist.songs) {
+            setAllSongs(currentPlaylist.songs);
+            return;
+          }
+        }
+        setAllSongs([]);
+        return;
+      }
       const recentSongsStr = await AsyncStorage.getItem("recentSongs");
       const likedSongsStr = await AsyncStorage.getItem("likedSongs");
-      
       const recentSongs = recentSongsStr ? JSON.parse(recentSongsStr) : [];
-      const likedSongs = likedSongsStr ? JSON.parse(likedSongsStr) : [];
-      
-      // Combine recent and liked songs, remove duplicates based on id
-      const combinedSongs = [...recentSongs, ...likedSongs];
+      const likedSongsArr = likedSongsStr ? JSON.parse(likedSongsStr) : [];
+      const combinedSongs = [...recentSongs, ...likedSongsArr];
       const uniqueSongs = Array.from(
         new Map(combinedSongs.map((song) => [song.id, song])).values()
       );
-      
+      // Sort uniquely by artistName then name for stable order in non-playlist mode
+      uniqueSongs.sort((a, b) => {
+        if (a.artistName === b.artistName) {
+          return a.name.localeCompare(b.name);
+        }
+        return a.artistName.localeCompare(b.artistName);
+      });
       setAllSongs(uniqueSongs);
     } catch (error) {
       console.error("Error loading all songs:", error);
@@ -171,38 +295,26 @@ export default function PlayerScreen({
 
   const getExistingDownloadLink = async (songId: string): Promise<string | null> => {
     try {
-      // Check in recent songs
       const recentSongsStr = await AsyncStorage.getItem("recentSongs");
       if (recentSongsStr) {
         const recentSongs = JSON.parse(recentSongsStr);
         const song = recentSongs.find((s: any) => s.id === songId);
-        if (song && song.downloadLink) {
-          return song.downloadLink;
-        }
+        if (song && song.downloadLink) return song.downloadLink;
       }
-
-      // Check in liked songs
       const likedSongsStr = await AsyncStorage.getItem("likedSongs");
       if (likedSongsStr) {
-        const likedSongs = JSON.parse(likedSongsStr);
-        const song = likedSongs.find((s: any) => s.id === songId);
-        if (song && song.downloadLink) {
-          return song.downloadLink;
-        }
+        const likedSongsArr = JSON.parse(likedSongsStr);
+        const song = likedSongsArr.find((s: any) => s.id === songId);
+        if (song && song.downloadLink) return song.downloadLink;
       }
-
-      // Check in user playlists
       const playlistsStr = await AsyncStorage.getItem("userPlaylists");
       if (playlistsStr) {
         const playlists = JSON.parse(playlistsStr);
         for (const playlist of playlists) {
           const song = playlist.songs.find((s: any) => s.id === songId);
-          if (song && song.downloadLink) {
-            return song.downloadLink;
-          }
+          if (song && song.downloadLink) return song.downloadLink;
         }
       }
-
       return null;
     } catch (error) {
       console.error("Error checking existing download link:", error);
@@ -210,87 +322,24 @@ export default function PlayerScreen({
     }
   };
 
-  const saveLikedSongs = async (songs: any[]) => {
-    try {
-      await AsyncStorage.setItem("likedSongs", JSON.stringify(songs));
-    } catch (error) {
-      console.error("Error saving liked songs:", error);
-    }
-  };
-
-  const handleLikePress = async () => {
-    const currentSong = {
-      id,
-      thumbnails,
-      name,
-      artistName,
-      albumName,
-      downloadLink,
-      likedAt: new Date().toISOString(),
-    };
-
-    let updatedLikedSongs;
-
-    if (isLiked) {
-      updatedLikedSongs = likedSongs.filter((song) => song.id !== id);
-      Alert.alert("Removed", `"${name}" removed from liked songs`);
-    } else {
-      updatedLikedSongs = [...likedSongs, currentSong];
-      Alert.alert("Added", `"${name}" added to liked songs`);
-    }
-
-    setLikedSongs(updatedLikedSongs);
-    await saveLikedSongs(updatedLikedSongs);
-    setIsLiked(!isLiked);
-    
-    // Reload all songs after updating liked songs
-    await loadAllSongs();
-  };
-
-  const addToRecentSongs = async (link: string) => {
-    try {
-      const currentSong = {
-        id,
-        thumbnails,
-        name,
-        artistName,
-        albumName,
-        downloadLink: link,
-        playedAt: new Date().toISOString(),
-      };
-      const stored = await AsyncStorage.getItem("recentSongs");
-      let arr = stored ? JSON.parse(stored) : [];
-      arr = arr.filter((song: any) => song.id !== id);
-      arr.unshift(currentSong);
-      if (arr.length > 50) arr = arr.slice(0, 50);
-      await AsyncStorage.setItem("recentSongs", JSON.stringify(arr));
-    } catch (e) {
-      console.error("Error saving recent song:", e);
-    }
-  };
-
-  // --- Audio controls with fast loading ---
+  // --- Audio ---
   const loadAndPlayImmediately = async (link: string) => {
     try {
       setIsLoading(true);
       if (soundRef.current) {
-        await soundRef.current.unloadAsync();
+        try { await soundRef.current.unloadAsync(); } catch {}
         soundRef.current = null;
       }
-      
-      // Set audio mode for better performance
       await Audio.setAudioModeAsync({
         playsInSilentModeIOS: true,
         staysActiveInBackground: true,
         shouldDuckAndroid: true,
       });
-
       const { sound } = await Audio.Sound.createAsync(
         { uri: link },
         { shouldPlay: true, progressUpdateIntervalMillis: 500 },
         onPlaybackStatusUpdate
       );
-      
       soundRef.current = sound;
       setIsPlaying(true);
       setIsLoading(false);
@@ -300,10 +349,9 @@ export default function PlayerScreen({
       Alert.alert("Error", "Failed to load audio");
     }
   };
-
   const loadAndPlay = async () => {
-    if (!downloadLink) return;
-    await loadAndPlayImmediately(downloadLink);
+    if (!currentSong.downloadLink) return;
+    await loadAndPlayImmediately(currentSong.downloadLink);
   };
 
   const onPlaybackStatusUpdate = (status: any) => {
@@ -314,21 +362,19 @@ export default function PlayerScreen({
         status.durationMillis ? status.positionMillis / status.durationMillis : 0
       );
       setIsPlaying(status.isPlaying);
-      
       if (status.didJustFinish) {
         setIsPlaying(false);
+        handleSkipForward();
       }
     }
   };
 
   const togglePlayPause = async () => {
     if (isLoading) return;
-
     if (!soundRef.current) {
       await loadAndPlay();
       return;
     }
-    
     try {
       const status = await soundRef.current.getStatusAsync();
       if (status.isLoaded && status.isPlaying) {
@@ -357,91 +403,11 @@ export default function PlayerScreen({
     return `${minutes}:${seconds < 10 ? "0" : ""}${seconds}`;
   };
 
-  const handleSkipForward = async () => {
-    if (allSongs.length === 0) {
-      Alert.alert("No Songs", "No songs available to skip to");
-      return;
-    }
-
-    // Stop current audio before navigating
-    if (soundRef.current) {
-      try {
-        await soundRef.current.stopAsync();
-        await soundRef.current.unloadAsync();
-        soundRef.current = null;
-        setIsPlaying(false);
-      } catch (error) {
-        console.error("Error stopping audio:", error);
-      }
-    }
-
-    const nextIndex = (currentIndex + 1) % allSongs.length;
-    const nextSong = allSongs[nextIndex];
-    
-    if (nextSong && nextSong.downloadLink) {
-      // Navigate to next song - adjust pathname based on your routing
-      router.push({
-        pathname: "/player/[id]",
-        params: {
-          id: nextSong.id,
-          thumbnails: nextSong.thumbnails,
-          name: nextSong.name,
-          artistName: nextSong.artistName,
-          albumName: nextSong.albumName,
-        },
-      });
-    }
-  };
-
-  const handleSkipBackward = async () => {
-    if (allSongs.length === 0) {
-      Alert.alert("No Songs", "No songs available to skip to");
-      return;
-    }
-
-    // Stop current audio before navigating
-    if (soundRef.current) {
-      try {
-        await soundRef.current.stopAsync();
-        await soundRef.current.unloadAsync();
-        soundRef.current = null;
-        setIsPlaying(false);
-      } catch (error) {
-        console.error("Error stopping audio:", error);
-      }
-    }
-
-    const prevIndex = currentIndex - 1 < 0 ? allSongs.length - 1 : currentIndex - 1;
-    const prevSong = allSongs[prevIndex];
-    
-    if (prevSong && prevSong.downloadLink) {
-      // Navigate to previous song - adjust pathname based on your routing
-      router.push({
-        pathname: "/player/[id]",
-        params: {
-          id: prevSong.id,
-          thumbnails: prevSong.thumbnails,
-          name: prevSong.name,
-          artistName: prevSong.artistName,
-          albumName: prevSong.albumName,
-        },
-      });
-    }
-  };
-
-  const handlePlaylistItemPress = (song: any) => {
-    setShowPlaylist(false);
-    // Navigate to the selected song
-    console.log("Playing song:", song.name);
-  };
-
-  const handleAddToPlaylist = () => {
-    setShowAddToPlaylist(true);
-  };
+  const handleAddToPlaylist = () => setShowAddToPlaylist(true);
 
   const renderPlaylistItem = ({ item }: { item: any }) => (
     <TouchableOpacity
-      style={[styles.playlistItem, item.id === id && styles.activePlaylistItem]}
+      style={[styles.playlistItem, item.id === currentSong.id && styles.activePlaylistItem]}
       onPress={() => handlePlaylistItemPress(item)}
     >
       <Image source={{ uri: item.thumbnails }} style={styles.playlistThumbnail} />
@@ -453,17 +419,18 @@ export default function PlayerScreen({
           {item.artistName}
         </Text>
       </View>
-      {item.id === id && (
+      {item.id === currentSong.id && (
         <MaterialCommunityIcons name="equalizer" size={20} color="#D7FD50" />
       )}
     </TouchableOpacity>
   );
 
+  // --- UI ---
   return (
     <View style={styles.container}>
       <View style={styles.bgWrapper}>
         <ImageBackground
-          source={{ uri: thumbnails }}
+          source={{ uri: currentSong.thumbnails }}
           style={styles.backgroundImage}
           blurRadius={30}
         >
@@ -476,10 +443,7 @@ export default function PlayerScreen({
                 </Link>
               </TouchableOpacity>
               <Text style={styles.headerTitle}>Now Playing</Text>
-              <TouchableOpacity
-                style={styles.headerBtn}
-                onPress={handleLikePress}
-              >
+              <TouchableOpacity style={styles.headerBtn} onPress={handleLikePress}>
                 <Feather
                   name="heart"
                   size={28}
@@ -489,10 +453,10 @@ export default function PlayerScreen({
               </TouchableOpacity>
             </View>
             <View style={styles.albumWrap}>
-              <Image source={{ uri: thumbnails }} style={styles.album} />
+              <Image source={{ uri: currentSong.thumbnails }} style={styles.album} />
             </View>
-            <Text style={styles.song}>{name}</Text>
-            <Text style={styles.artist}>{artistName}</Text>
+            <Text style={styles.song}>{currentSong.name}</Text>
+            <Text style={styles.artist}>{currentSong.artistName}</Text>
             <View style={styles.sliderContainer}>
               <Slider
                 style={styles.slider}
@@ -506,16 +470,14 @@ export default function PlayerScreen({
               />
               <View style={styles.timeRow}>
                 <Text style={styles.time}>{formatTime(position)}</Text>
-                <Text style={styles.time}>
-                  -{formatTime(duration - position)}
-                </Text>
+                <Text style={styles.time}>-{formatTime(duration - position)}</Text>
               </View>
             </View>
             <View style={styles.controlsRow}>
               <TouchableOpacity style={styles.controlBtn}>
                 <MaterialCommunityIcons name="shuffle" size={26} color="#fff" />
               </TouchableOpacity>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.controlBtn}
                 onPress={handleSkipBackward}
                 disabled={allSongs.length === 0}
@@ -537,14 +499,14 @@ export default function PlayerScreen({
                   />
                 )}
               </TouchableOpacity>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.controlBtn}
                 onPress={handleSkipForward}
                 disabled={allSongs.length === 0}
               >
                 <Feather name="skip-forward" size={32} color="#fff" />
               </TouchableOpacity>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.controlBtn}
                 onPress={handleAddToPlaylist}
               >
@@ -554,8 +516,6 @@ export default function PlayerScreen({
           </View>
         </ImageBackground>
       </View>
-
-      {/* Current Playlist Modal */}
       <Modal
         visible={showPlaylist}
         animationType="slide"
@@ -583,25 +543,18 @@ export default function PlayerScreen({
           </View>
         </View>
       </Modal>
-
-      {/* Add to Playlist Modal */}
       <AddToPlaylistModal
         visible={showAddToPlaylist}
         onClose={() => setShowAddToPlaylist(false)}
-        currentSong={{
-          id,
-          thumbnails,
-          name,
-          artistName,
-          albumName,
-          downloadLink,
-        }}
+        currentSong={currentSong}
       />
     </View>
   );
 }
 
-// Separate Component for Add to Playlist Modal
+// ... AddToPlaylistModal and styles block (as before, unchanged) ...
+
+// --- AddToPlaylistModal stays unchanged ---
 function AddToPlaylistModal({
   visible,
   onClose,
@@ -646,7 +599,6 @@ function AddToPlaylistModal({
       Alert.alert("Error", "Please enter a playlist name");
       return;
     }
-
     const songWithDownloadLink = {
       id: currentSong.id,
       thumbnails: currentSong.thumbnails,
@@ -655,7 +607,6 @@ function AddToPlaylistModal({
       albumName: currentSong.albumName,
       downloadLink: currentSong.downloadLink,
     };
-
     const newPlaylist: Playlist = {
       id: Date.now().toString(),
       name: newPlaylistName.trim(),
@@ -663,10 +614,9 @@ function AddToPlaylistModal({
       createdAt: new Date().toISOString(),
       thumbnail: currentSong.thumbnails,
     };
-
     const updatedPlaylists = [...playlists, newPlaylist];
     await savePlaylists(updatedPlaylists);
-    
+
     Alert.alert("Success", `Playlist "${newPlaylistName}" created and song added!`);
     setNewPlaylistName("");
     setShowCreateNew(false);
@@ -674,14 +624,11 @@ function AddToPlaylistModal({
   };
 
   const addToExistingPlaylist = async (playlist: Playlist) => {
-    // Check if song already exists in playlist
     const songExists = playlist.songs.some((song) => song.id === currentSong.id);
-    
     if (songExists) {
       Alert.alert("Info", `"${currentSong.name}" is already in "${playlist.name}"`);
       return;
     }
-
     const songWithDownloadLink = {
       id: currentSong.id,
       thumbnails: currentSong.thumbnails,
@@ -690,17 +637,14 @@ function AddToPlaylistModal({
       albumName: currentSong.albumName,
       downloadLink: currentSong.downloadLink,
     };
-
     const updatedPlaylist = {
       ...playlist,
       songs: [...playlist.songs, songWithDownloadLink],
       thumbnail: playlist.songs.length === 0 ? currentSong.thumbnails : playlist.thumbnail,
     };
-
     const updatedPlaylists = playlists.map((p) =>
       p.id === playlist.id ? updatedPlaylist : p
     );
-
     await savePlaylists(updatedPlaylists);
     Alert.alert("Success", `Added to "${playlist.name}"`);
     onClose();
@@ -747,7 +691,6 @@ function AddToPlaylistModal({
               <Ionicons name="close" size={28} color="#fff" />
             </TouchableOpacity>
           </View>
-
           {!showCreateNew ? (
             <>
               <TouchableOpacity
@@ -759,7 +702,6 @@ function AddToPlaylistModal({
                 </View>
                 <Text style={styles.createPlaylistText}>Create New Playlist</Text>
               </TouchableOpacity>
-
               <FlatList
                 data={playlists}
                 renderItem={renderPlaylistItem}
@@ -809,6 +751,7 @@ function AddToPlaylistModal({
   );
 }
 
+// --- Styles ---
 const styles = StyleSheet.create({
   container: { flex: 1, width: "100%" },
   bgWrapper: { flex: 1, overflow: "hidden" },
@@ -1029,3 +972,4 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
 });
+
