@@ -62,11 +62,15 @@ export default function PlayerScreen({
         const result = await fetch("/download?id=" + id);
         if (!result.ok) throw new Error("Network response was not ok");
         const data = await result.json();
-        setDownloadLink(data.response.directLink);
+        const link = data.response.directLink;
+        setDownloadLink(link);
+        
+        // Save to recent songs with download link
+        await addToRecentSongs(link);
         
         // Auto-load and play immediately after getting link
-        if (data.response.directLink) {
-          await loadAndPlayImmediately(data.response.directLink);
+        if (link) {
+          await loadAndPlayImmediately(link);
         }
       } catch (error) {
         console.error("Failed to fetch download link:", error);
@@ -91,11 +95,6 @@ export default function PlayerScreen({
     loadLikedSongs();
     loadPlaylist();
   }, []);
-
-  // Save to recent songs on song change
-  useEffect(() => {
-    addToRecentSongs();
-  }, [id]);
 
   // Check if song is liked
   useEffect(() => {
@@ -140,6 +139,7 @@ export default function PlayerScreen({
       name,
       artistName,
       albumName,
+      downloadLink,
       likedAt: new Date().toISOString(),
     };
 
@@ -158,7 +158,7 @@ export default function PlayerScreen({
     setIsLiked(!isLiked);
   };
 
-  const addToRecentSongs = async () => {
+  const addToRecentSongs = async (link: string) => {
     try {
       const currentSong = {
         id,
@@ -166,6 +166,7 @@ export default function PlayerScreen({
         name,
         artistName,
         albumName,
+        downloadLink: link,
         playedAt: new Date().toISOString(),
       };
       const stored = await AsyncStorage.getItem("recentSongs");
@@ -424,6 +425,7 @@ export default function PlayerScreen({
           name,
           artistName,
           albumName,
+          downloadLink,
         }}
       />
     </View>
@@ -476,10 +478,19 @@ function AddToPlaylistModal({
       return;
     }
 
+    const songWithDownloadLink = {
+      id: currentSong.id,
+      thumbnails: currentSong.thumbnails,
+      name: currentSong.name,
+      artistName: currentSong.artistName,
+      albumName: currentSong.albumName,
+      downloadLink: currentSong.downloadLink,
+    };
+
     const newPlaylist: Playlist = {
       id: Date.now().toString(),
       name: newPlaylistName.trim(),
-      songs: [currentSong],
+      songs: [songWithDownloadLink],
       createdAt: new Date().toISOString(),
       thumbnail: currentSong.thumbnails,
     };
@@ -502,9 +513,18 @@ function AddToPlaylistModal({
       return;
     }
 
+    const songWithDownloadLink = {
+      id: currentSong.id,
+      thumbnails: currentSong.thumbnails,
+      name: currentSong.name,
+      artistName: currentSong.artistName,
+      albumName: currentSong.albumName,
+      downloadLink: currentSong.downloadLink,
+    };
+
     const updatedPlaylist = {
       ...playlist,
-      songs: [...playlist.songs, currentSong],
+      songs: [...playlist.songs, songWithDownloadLink],
       thumbnail: playlist.songs.length === 0 ? currentSong.thumbnails : playlist.thumbnail,
     };
 

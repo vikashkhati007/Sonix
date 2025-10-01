@@ -179,7 +179,7 @@ const SearchScreen = () => {
                     pathname: "/player/[id]",
                     params: {
                       id: song.videoId,
-                      thumbnails: song.thumbnails?.[1]?.url,
+                      thumbnails: song.thumbnails?.[1]?.url || song.thumbnails?.[0]?.url,
                       name: song.name,
                       artistName: song.artist?.name,
                       albumName: song.album?.name,
