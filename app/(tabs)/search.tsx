@@ -268,7 +268,7 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
   submitButton: {},
-  albumList: { flex: 1, paddingHorizontal: 20, marginTop: 8 },
+  albumList: { flex: 1, paddingHorizontal: 20, marginTop: 20 },
   albumItem: { flexDirection: "row", alignItems: "center", marginBottom: 20 },
   albumImage: {
     width: 90,
@@ -284,9 +284,9 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   albumMeta: { flexDirection: "row", alignItems: "center", flexWrap: "wrap" },
-  albumArtist: { fontSize: 15, color: "#999" },
+  albumArtist: { fontSize: 12, color: "#999" },
   albumDot: { fontSize: 15, color: "#999", marginHorizontal: 8 },
-  albumSongs: { fontSize: 15, color: "#999" },
+  albumSongs: { fontSize: 12, color: "#999" },
   playButton: {
     width: 52,
     height: 52,

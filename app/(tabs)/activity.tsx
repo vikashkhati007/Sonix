@@ -14,14 +14,12 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 // Static albums list for "All" fallback (optional, can be removed if only want dynamic)
-const albums: string | any[] = [
-  // ... more static data
-];
+const albums: string | any[] = [];
 
 const ActivityScreen = () => {
   const [selectedTab, setSelectedTab] = React.useState("All");
-  const [likedSongs, setLikedSongs] = React.useState([]);
-  const [recentSongs, setRecentSongs] = React.useState([]);
+  const [likedSongs, setLikedSongs] = React.useState<any>([]);
+  const [recentSongs, setRecentSongs] = React.useState<any>([]);
   const [isLoading, setIsLoading] = React.useState(false);
 
   // Load liked/recent songs from AsyncStorage as needed
@@ -77,7 +75,7 @@ const ActivityScreen = () => {
   // Get the data to show for the current tab
   let itemsToShow = [];
   if (selectedTab === 'Liked Songs') {
-    itemsToShow = likedSongs.map(song => ({
+    itemsToShow = likedSongs.map((song:any) => ({
       id: song.id,
       title: song.albumName || song.name,
       artist: song.artistName,
@@ -85,7 +83,7 @@ const ActivityScreen = () => {
       source: 'Liked',
     }));
   } else if (selectedTab === 'Recent Viewed') {
-    itemsToShow = recentSongs.map(song => ({
+    itemsToShow = recentSongs.map((song:any) => ({
       id: song.id,
       title: song.albumName || song.name,
       artist: song.artistName,
@@ -95,14 +93,14 @@ const ActivityScreen = () => {
   } else if (selectedTab === 'All') {
     // Combine liked and recent, unique by id, most recent first
     const combined = [...recentSongs, ...likedSongs];
-    const uniqueMap = {};
+    const uniqueMap:any = {};
     for (const song of combined) {
       if (!uniqueMap[song.id]) {
         uniqueMap[song.id] = {
           id: song.id,
           title: song.albumName || song.name,
           artist: song.artistName,
-          image: song.thumbnails,
+          image: song.thumbnails?.[1]?.url || song.thumbnails?.[0]?.url,
           source: song.likedAt ? 'Liked' : 'Recent', // Just for info
         };
       }
@@ -161,7 +159,7 @@ const ActivityScreen = () => {
       ) : (
       <ScrollView style={styles.albumList} showsVerticalScrollIndicator={false}>
         {itemsToShow.length > 0 ? (
-          itemsToShow.map((album) => (
+          itemsToShow.map((album:any) => (
             <TouchableOpacity key={album.id} style={styles.albumItem}>
               <Image source={{ uri: album.image }} style={styles.albumImage} />
               <View style={styles.albumInfo}>

@@ -4,22 +4,7 @@ import { Link } from 'expo-router';
 import React, { useState } from 'react';
 import { Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
-const musicData = [
-  // Replace with dynamic data if available
-  {
-    title: 'Starlit Reverie',
-    author: 'Budiarti',
-    count: '8 Songs',
-    img: 'https://link-to-img1.jpg'
-  },
-  {
-    title: 'Midnight Confessions',
-    author: 'Alexiao',
-    count: '24 Songs',
-    img: 'https://link-to-img2.jpg'
-  },
-  // ...add more items as needed
-];
+const musicData: any[] = [];
 
 const MusicSearchScreen = () => {
   const [search, setSearch] = useState('');
