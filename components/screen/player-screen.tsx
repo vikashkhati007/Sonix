@@ -95,6 +95,37 @@ export default function PlayerScreen({
     setIsLiked(likedSongs.some((song) => song.id === currentSong.id));
   }, [likedSongs, currentSong.id]);
 
+  const updateDownloadLinkInStorage = async (songId: string, newLink: string) => {
+    try {
+      // Update liked songs
+      const likedStr = await AsyncStorage.getItem("likedSongs");
+      if (likedStr) {
+        const liked = JSON.parse(likedStr);
+        const updatedLiked = liked.map((s: any) => s.id === songId ? { ...s, downloadLink: newLink } : s);
+        await AsyncStorage.setItem("likedSongs", JSON.stringify(updatedLiked));
+        setLikedSongs(updatedLiked);
+      }
+
+      // Update playlists
+      const playlistsStr = await AsyncStorage.getItem("userPlaylists");
+      if (playlistsStr) {
+        const playlists = JSON.parse(playlistsStr);
+        const updatedPlaylists = playlists.map((p: Playlist) => {
+          if (p.songs.some((s: any) => s.id === songId)) {
+            return {
+              ...p,
+              songs: p.songs.map((s: any) => s.id === songId ? { ...s, downloadLink: newLink } : s),
+            };
+          }
+          return p;
+        });
+        await AsyncStorage.setItem("userPlaylists", JSON.stringify(updatedPlaylists));
+      }
+    } catch (e) {
+      console.error("Error updating download links in storage:", e);
+    }
+  };
+
   // 5. Audio player effect (fetch link, play, cleanup)
   useEffect(() => {
     let isMounted = true;
@@ -110,25 +141,49 @@ export default function PlayerScreen({
         setIsLoading(true);
         const existingLink = await getExistingDownloadLink(currentSong.id);
         if (!isMounted) return;
+
+        let linkToUse = existingLink;
+        let fetchedNew = false;
+
         if (existingLink) {
           setCurrentSong((prev) => ({ ...prev, downloadLink: existingLink }));
           await addToRecentSongs(existingLink, currentSong);
           await loadAllSongs();
-          await loadAndPlayImmediately(existingLink);
+
+          try {
+            await loadAndPlayImmediately(existingLink);
+          } catch (playError) {
+            console.log("Existing link failed, fetching new one");
+            fetchedNew = true;
+            const result = await fetch("/download?id=" + currentSong.id);
+            if (!result.ok) throw new Error("Network response was not ok");
+            const data = await result.json();
+            linkToUse = data.response.directLink;
+            if (!linkToUse) throw new Error("No direct link in response");
+            setCurrentSong((prev: any) => ({ ...prev, downloadLink: linkToUse }));
+            await updateDownloadLinkInStorage(currentSong.id, linkToUse);
+            await addToRecentSongs(linkToUse, currentSong);
+            await loadAllSongs();
+            await loadAndPlayImmediately(linkToUse);
+          }
         } else {
           const result = await fetch("/download?id=" + currentSong.id);
           if (!result.ok) throw new Error("Network response was not ok");
           const data = await result.json();
-          const link = data.response.directLink;
-          setCurrentSong((prev) => ({ ...prev, downloadLink: link }));
-          await addToRecentSongs(link, currentSong);
+          linkToUse = data.response.directLink;
+          if (!linkToUse) throw new Error("No direct link in response");
+          setCurrentSong((prev:any) => ({ ...prev, downloadLink: linkToUse }));
+          await addToRecentSongs(linkToUse, currentSong);
           await loadAllSongs();
-          if (link) await loadAndPlayImmediately(link);
+          await loadAndPlayImmediately(linkToUse);
         }
+
+        if (!fetchedNew && !isMounted) return;
       } catch (error) {
-        console.error("Failed to fetch download link:", error);
-        if (isMounted) Alert.alert("Error", "Failed to fetch download link.");
-        setIsLoading(false);
+        console.error("Failed to fetch or play download link:", error);
+        if (isMounted) Alert.alert("Error", "Failed to fetch or load song.");
+      } finally {
+        if (isMounted) setIsLoading(false);
       }
     })();
     return () => {
@@ -324,31 +379,24 @@ export default function PlayerScreen({
 
   // --- Audio ---
   const loadAndPlayImmediately = async (link: string) => {
-    try {
-      setIsLoading(true);
-      if (soundRef.current) {
-        try { await soundRef.current.unloadAsync(); } catch {}
-        soundRef.current = null;
-      }
-      await Audio.setAudioModeAsync({
-        playsInSilentModeIOS: true,
-        staysActiveInBackground: true,
-        shouldDuckAndroid: true,
-      });
-      const { sound } = await Audio.Sound.createAsync(
-        { uri: link },
-        { shouldPlay: true, progressUpdateIntervalMillis: 500 },
-        onPlaybackStatusUpdate
-      );
-      soundRef.current = sound;
-      setIsPlaying(true);
-      setIsLoading(false);
-    } catch (error) {
-      console.error("Error loading audio:", error);
-      setIsLoading(false);
-      Alert.alert("Error", "Failed to load audio");
+    if (soundRef.current) {
+      try { await soundRef.current.unloadAsync(); } catch {}
+      soundRef.current = null;
     }
+    await Audio.setAudioModeAsync({
+      playsInSilentModeIOS: true,
+      staysActiveInBackground: true,
+      shouldDuckAndroid: true,
+    });
+    const { sound } = await Audio.Sound.createAsync(
+      { uri: link },
+      { shouldPlay: true, progressUpdateIntervalMillis: 500 },
+      onPlaybackStatusUpdate
+    );
+    soundRef.current = sound;
+    setIsPlaying(true);
   };
+
   const loadAndPlay = async () => {
     if (!currentSong.downloadLink) return;
     await loadAndPlayImmediately(currentSong.downloadLink);
@@ -551,8 +599,6 @@ export default function PlayerScreen({
     </View>
   );
 }
-
-// ... AddToPlaylistModal and styles block (as before, unchanged) ...
 
 // --- AddToPlaylistModal stays unchanged ---
 function AddToPlaylistModal({
@@ -935,7 +981,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   playlistInput: {
-    backgroundColor: "rgba(255,255,255,0.1)",
+    backgroundColor: "rgba(255,253,255,0.1)",
     borderRadius: 12,
     padding: 16,
     color: "#fff",
@@ -972,4 +1018,3 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
 });
-
