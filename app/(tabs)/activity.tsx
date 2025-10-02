@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Link } from "expo-router";
 import React from "react";
 import {
@@ -38,8 +38,8 @@ const ActivityScreen = () => {
     setIsLoading(true);
     try {
       const [liked, recent] = await Promise.all([
-        AsyncStorage.getItem('likedSongs'),
-        AsyncStorage.getItem('recentSongs'),
+        AsyncStorage.getItem("likedSongs"),
+        AsyncStorage.getItem("recentSongs"),
       ]);
       setLikedSongs(liked ? JSON.parse(liked) : []);
       setRecentSongs(recent ? JSON.parse(recent) : []);
@@ -53,7 +53,7 @@ const ActivityScreen = () => {
   const loadLikedSongs = async () => {
     setIsLoading(true);
     try {
-      const storedLikedSongs = await AsyncStorage.getItem('likedSongs');
+      const storedLikedSongs = await AsyncStorage.getItem("likedSongs");
       setLikedSongs(storedLikedSongs ? JSON.parse(storedLikedSongs) : []);
     } catch (e) {
       setLikedSongs([]);
@@ -64,7 +64,7 @@ const ActivityScreen = () => {
   const loadRecentSongs = async () => {
     setIsLoading(true);
     try {
-      const storedRecentSongs = await AsyncStorage.getItem('recentSongs');
+      const storedRecentSongs = await AsyncStorage.getItem("recentSongs");
       setRecentSongs(storedRecentSongs ? JSON.parse(storedRecentSongs) : []);
     } catch (e) {
       setRecentSongs([]);
@@ -74,26 +74,26 @@ const ActivityScreen = () => {
 
   // Get the data to show for the current tab
   let itemsToShow = [];
-  if (selectedTab === 'Liked Songs') {
-    itemsToShow = likedSongs.map((song:any) => ({
+  if (selectedTab === "Liked Songs") {
+    itemsToShow = likedSongs.map((song: any) => ({
       id: song.id,
       title: song.albumName || song.name,
       artist: song.artistName,
       image: song.thumbnails,
-      source: 'Liked',
+      source: "Liked",
     }));
-  } else if (selectedTab === 'Recent Viewed') {
-    itemsToShow = recentSongs.map((song:any) => ({
+  } else if (selectedTab === "Recent Viewed") {
+    itemsToShow = recentSongs.map((song: any) => ({
       id: song.id,
       title: song.albumName || song.name,
       artist: song.artistName,
       image: song.thumbnails,
-      source: 'Recent',
+      source: "Recent",
     }));
-  } else if (selectedTab === 'All') {
+  } else if (selectedTab === "All") {
     // Combine liked and recent, unique by id, most recent first
     const combined = [...recentSongs, ...likedSongs];
-    const uniqueMap:any = {};
+    const uniqueMap: any = {};
     for (const song of combined) {
       if (!uniqueMap[song.id]) {
         uniqueMap[song.id] = {
@@ -101,13 +101,13 @@ const ActivityScreen = () => {
           title: song.albumName || song.name,
           artist: song.artistName,
           image: song.thumbnails,
-          source: song.likedAt ? 'Liked' : 'Recent', // Just for info
+          source: song.likedAt ? "Liked" : "Recent", // Just for info
         };
       }
     }
     itemsToShow = Object.values(uniqueMap);
     // Optionally, if you want to add static albums when both lists are empty
-    if(itemsToShow.length === 0 && albums.length) {
+    if (itemsToShow.length === 0 && albums.length) {
       itemsToShow = albums;
     }
   }
@@ -155,52 +155,72 @@ const ActivityScreen = () => {
       </ScrollView>
       {/* Content */}
       {isLoading ? (
-        <Text style={{ color: '#fff', textAlign: 'center', marginTop: 40 }}>Loading...</Text>
+        <Text style={{ color: "#fff", textAlign: "center", marginTop: 40 }}>
+          Loading...
+        </Text>
       ) : (
-      <ScrollView style={styles.albumList} showsVerticalScrollIndicator={false}>
-        {itemsToShow.length > 0 ? (
-          itemsToShow.map((album:any) => (
-            <TouchableOpacity key={album.id} style={styles.albumItem}>
-              <Image source={{ uri: album.image }} style={styles.albumImage} />
-              <View style={styles.albumInfo}>
-                <Text style={styles.albumTitle}>{album.title}</Text>
-                <View style={styles.albumMeta}>
-                  <Text style={styles.albumArtist}>By {album.artist}</Text>
-                  {album.source ? (
-                    <Text style={[styles.albumDot, { color: album.source==="Liked" ? "#C4F34A" : "#0af"}]}>• {album.source}</Text>
-                  ) : (
-                    <Text style={styles.albumDot}>•</Text>
-                  )}
+        <ScrollView
+          style={styles.albumList}
+          showsVerticalScrollIndicator={false}
+        >
+          {itemsToShow.length > 0 ? (
+            itemsToShow.map((album: any) => (
+              <TouchableOpacity key={album.id} style={styles.albumItem}>
+                <View style={styles.imageContainer}>
+                  <Image
+                    source={{ uri: album.image }}
+                    style={styles.albumImage}
+                  />
                 </View>
-              </View>
-              <TouchableOpacity style={styles.playButton}>
+                <View style={styles.albumInfo}>
+                  <Text style={styles.albumTitle}>{album.title}</Text>
+                  <View style={styles.albumMeta}>
+                    <Text style={styles.albumArtist}>By {album.artist}</Text>
+                    {album.source ? (
+                      <Text
+                        style={[
+                          styles.albumDot,
+                          {
+                            color:
+                              album.source === "Liked" ? "#C4F34A" : "#0af",
+                          },
+                        ]}
+                      >
+                        • {album.source}
+                      </Text>
+                    ) : (
+                      <Text style={styles.albumDot}>•</Text>
+                    )}
+                  </View>
+                </View>
+                <TouchableOpacity style={styles.playButton}>
                   <Link
-                  href={{
-                    pathname: "/player/[id]",
-                    params: {
-                      id: album.id,
-                      thumbnails: album.image,
-                      name: album.title,
-                      artistName: album.artist,
-                      albumName: album.title,
-                    },
-                  }}
-                >
-                <Ionicons name="play" size={20} color="#fff" />
-                </Link>
+                    href={{
+                      pathname: "/player/[id]",
+                      params: {
+                        id: album.id,
+                        thumbnails: album.image,
+                        name: album.title,
+                        artistName: album.artist,
+                        albumName: album.title,
+                      },
+                    }}
+                  >
+                    <Ionicons name="play" size={20} color="#fff" />
+                  </Link>
+                </TouchableOpacity>
               </TouchableOpacity>
-            </TouchableOpacity>
-          ))
-        ) : (
-          <Text style={{ color: '#fff', textAlign: 'center', marginTop: 40 }}>
-            {selectedTab === "Liked Songs"
-              ? "No liked songs yet."
-              : selectedTab === "Recent Viewed"
-              ? "No recently viewed songs yet."
-              : "No music found."}
-          </Text>
-        )}
-      </ScrollView>
+            ))
+          ) : (
+            <Text style={{ color: "#fff", textAlign: "center", marginTop: 40 }}>
+              {selectedTab === "Liked Songs"
+                ? "No liked songs yet."
+                : selectedTab === "Recent Viewed"
+                ? "No recently viewed songs yet."
+                : "No music found."}
+            </Text>
+          )}
+        </ScrollView>
       )}
     </SafeAreaView>
   );
@@ -273,11 +293,18 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 20,
   },
-  albumImage: {
-    width: 90,
-    height: 90,
+  imageContainer: {
+    width: 80,
+    height: 80,
     borderRadius: 16,
+    overflow: "hidden", // Ensures square cropping and no overflow
     backgroundColor: "#222",
+  },
+  albumImage: {
+    flex: 1, // Fills the container
+    width: undefined, // Allows flex to handle sizing
+    height: undefined,
+    transform: [{ scale: 1.5 }], // Slight zoom effect
   },
   albumInfo: {
     flex: 1,

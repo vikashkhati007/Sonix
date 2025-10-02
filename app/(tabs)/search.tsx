@@ -23,6 +23,15 @@ const SearchScreen = () => {
   const [filterVisible, setFilterVisible] = useState(false);
   const [filterType, setFilterType] = useState("default");
 
+  // Helper to generate reliable YouTube thumbnail URL from videoId
+  const getThumbnailUri = (song: any) => {
+    if (!song.videoId) {
+      return 'https://via.placeholder.com/90x90/222/999?text=No+Image';
+    }
+    // Standard HQ thumbnail: reliable, larger, no blocking params
+    return `https://i.ytimg.com/vi/${song.videoId}/hqdefault.jpg`;
+  };
+
   // Fetch default songs
   const fetchDefaultSongs = async () => {
     setLoading(true);
@@ -31,7 +40,7 @@ const SearchScreen = () => {
       const recent = storedRecentSongs ? JSON.parse(storedRecentSongs) : [];
       const mapped = recent.map((item: any) => ({
         videoId: item.id,
-        thumbnails: [{ url: item.thumbnails }, { url: item.thumbnails }],
+        thumbnails: [{ url: item.thumbnails[0].url }, { url: item.thumbnails[1].url }],
         name: item.name,
         artist: { name: item.artistName },
         album: { name: item.albumName },
@@ -66,7 +75,6 @@ const SearchScreen = () => {
       if (Array.isArray(data.response)) {
         setSongs(data.response);
       } else {
-        console.error("Unexpected API format:", data);
         setSongs([]);
       }
     } catch (err) {
@@ -157,40 +165,47 @@ const SearchScreen = () => {
             style={{ marginTop: 40 }}
           />
         ) : songs.length > 0 ? (
-          songs.map((song) => (
-            <TouchableOpacity key={song.videoId} style={styles.albumItem}>
-              <Image
-                source={{
-                  uri: song.thumbnails?.[1]?.url || song.thumbnails?.[0]?.url,
-                }}
-                style={styles.albumImage}
-              />
-              <View style={styles.albumInfo}>
-                <Text style={styles.albumTitle}>{song.name}</Text>
-                <View style={styles.albumMeta}>
-                  <Text style={styles.albumArtist}>By {song.artist?.name}</Text>
-                  <Text style={styles.albumDot}>•</Text>
-                  <Text style={styles.albumSongs}>{song.album?.name}</Text>
+          songs.map((song) => {
+            const thumbnailUri = getThumbnailUri(song);
+            return (
+              <TouchableOpacity key={song.videoId} style={styles.albumItem}>
+                <View style={styles.imageContainer}>
+                  <Image
+                    source={{ uri: thumbnailUri }}
+                    style={styles.albumImage}
+                    resizeMode="cover"
+                    onError={(error) => {
+                      console.error(`Image failed for ${song.name} (ID: ${song.videoId}):`, error.nativeEvent.error);
+                    }}
+                  />
                 </View>
-              </View>
-              <TouchableOpacity style={styles.playButton}>
-                <Link
-                  href={{
-                    pathname: "/player/[id]",
-                    params: {
-                      id: song.videoId,
-                      thumbnails: song.thumbnails?.[1]?.url || song.thumbnails?.[0]?.url,
-                      name: song.name,
-                      artistName: song.artist?.name,
-                      albumName: song.album?.name,
-                    },
-                  }}
-                >
-                  <Ionicons name="play" size={20} color="#fff" />
-                </Link>
+                <View style={styles.albumInfo}>
+                  <Text style={styles.albumTitle}>{song.name}</Text>
+                  <View style={styles.albumMeta}>
+                    <Text style={styles.albumArtist}>By {song.artist?.name}</Text>
+                    <Text style={styles.albumDot}>•</Text>
+                    <Text style={styles.albumSongs}>{song.album?.name}</Text>
+                  </View>
+                </View>
+                <TouchableOpacity style={styles.playButton}>
+                  <Link
+                    href={{
+                      pathname: "/player/[id]",
+                      params: {
+                        id: song.videoId,
+                        thumbnails: thumbnailUri, // Pass the generated URI
+                        name: song.name,
+                        artistName: song.artist?.name,
+                        albumName: song.album?.name,
+                      },
+                    }}
+                  >
+                    <Ionicons name="play" size={20} color="#fff" />
+                  </Link>
+                </TouchableOpacity>
               </TouchableOpacity>
-            </TouchableOpacity>
-          ))
+            );
+          })
         ) : (
           <View style={styles.noResults}>
             <Text style={{ color: "#999", fontSize: 16 }}>
@@ -270,11 +285,18 @@ const styles = StyleSheet.create({
   submitButton: {},
   albumList: { flex: 1, paddingHorizontal: 20, marginTop: 20 },
   albumItem: { flexDirection: "row", alignItems: "center", marginBottom: 20 },
-  albumImage: {
-    width: 90,
-    height: 90,
+  imageContainer: {
+    width: 80,
+    height: 80,
     borderRadius: 16,
+    overflow: "hidden", // Ensures square cropping and no overflow
     backgroundColor: "#222",
+  },
+  albumImage: {
+    flex: 1, // Fills the container
+    width: undefined, // Allows flex to handle sizing
+    height: undefined,
+    transform: [{ scale: 1.5 }], // Slight zoom effect
   },
   albumInfo: { flex: 1, marginLeft: 16 },
   albumTitle: {
