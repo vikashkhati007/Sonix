@@ -100,7 +100,7 @@ const ActivityScreen = () => {
           id: song.id,
           title: song.albumName || song.name,
           artist: song.artistName,
-          image: song.thumbnails?.[1]?.url || song.thumbnails?.[0]?.url,
+          image: song.thumbnails,
           source: song.likedAt ? 'Liked' : 'Recent', // Just for info
         };
       }
