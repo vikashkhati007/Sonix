@@ -5,7 +5,7 @@ import React, { useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 const music = () => {
-    const { id, thumbnails, name, artistName, albumName } = useLocalSearchParams();
+    const { id, thumbnails, name, artistName, albumName, playlistId } = useLocalSearchParams();
    const [loaded, error] = useFonts({
     Inter_400Regular,
   });
@@ -27,6 +27,7 @@ const music = () => {
             name={String(name)}
             artistName={String(artistName)}
             albumName={String(albumName)}
+            playlistId={String(playlistId)}
         />
     </View>
   )

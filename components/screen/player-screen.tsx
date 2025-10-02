@@ -32,7 +32,7 @@ export default function PlayerScreen({
   name,
   artistName,
   albumName,
-  playlistId = "",
+  playlistId,
 }: {
   id: string;
   thumbnails: string;
@@ -315,7 +315,17 @@ export default function PlayerScreen({
 
   const loadAllSongs = async () => {
     try {
-      if (playlistId) {
+      if (playlistId === "undefined") {
+        const recentSongsStr = await AsyncStorage.getItem("recentSongs");
+        if (recentSongsStr) {
+          const recentSongs = JSON.parse(recentSongsStr);
+          setAllSongs(recentSongs);
+          return;
+        }
+        setAllSongs([]);
+        return;
+      }
+      else{
         const playlistsStr = await AsyncStorage.getItem("userPlaylists");
         if (playlistsStr) {
           const playlists = JSON.parse(playlistsStr);
@@ -328,22 +338,6 @@ export default function PlayerScreen({
         setAllSongs([]);
         return;
       }
-      const recentSongsStr = await AsyncStorage.getItem("recentSongs");
-      const likedSongsStr = await AsyncStorage.getItem("likedSongs");
-      const recentSongs = recentSongsStr ? JSON.parse(recentSongsStr) : [];
-      const likedSongsArr = likedSongsStr ? JSON.parse(likedSongsStr) : [];
-      const combinedSongs = [...recentSongs, ...likedSongsArr];
-      const uniqueSongs = Array.from(
-        new Map(combinedSongs.map((song) => [song.id, song])).values()
-      );
-      // Sort uniquely by artistName then name for stable order in non-playlist mode
-      uniqueSongs.sort((a, b) => {
-        if (a.artistName === b.artistName) {
-          return a.name.localeCompare(b.name);
-        }
-        return a.artistName.localeCompare(b.artistName);
-      });
-      setAllSongs(uniqueSongs);
     } catch (error) {
       console.error("Error loading all songs:", error);
     }
