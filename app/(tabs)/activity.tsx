@@ -77,7 +77,7 @@ const ActivityScreen = () => {
   if (selectedTab === "Liked Songs") {
     itemsToShow = likedSongs.map((song: any) => ({
       id: song.id,
-      title: song.albumName || song.name,
+      title: song.name || song.albumName,
       artist: song.artistName,
       image: song.thumbnails,
       source: "Liked",
@@ -85,7 +85,7 @@ const ActivityScreen = () => {
   } else if (selectedTab === "Recent Viewed") {
     itemsToShow = recentSongs.map((song: any) => ({
       id: song.id,
-      title: song.albumName || song.name,
+      title: song.name || song.albumName,
       artist: song.artistName,
       image: song.thumbnails,
       source: "Recent",
@@ -98,7 +98,7 @@ const ActivityScreen = () => {
       if (!uniqueMap[song.id]) {
         uniqueMap[song.id] = {
           id: song.id,
-          title: song.albumName || song.name,
+          title: song.name || song.albumName,
           artist: song.artistName,
           image: song.thumbnails,
           source: song.likedAt ? "Liked" : "Recent", // Just for info

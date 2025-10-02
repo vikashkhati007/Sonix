@@ -903,6 +903,7 @@ const styles = StyleSheet.create({
     height: 50,
     borderRadius: 8,
     marginRight: 12,
+    
   },
   playlistInfo: {
     flex: 1,
@@ -956,16 +957,19 @@ const styles = StyleSheet.create({
   },
   addPlaylistThumbnailContainer: {
     marginRight: 12,
+
   },
   addPlaylistThumbnail: {
-    width: 50,
-    height: 50,
+    width: 60,
+    height: 60,
     borderRadius: 8,
+
   },
   placeholderThumbnail: {
     backgroundColor: "rgba(255,255,255,0.1)",
     alignItems: "center",
     justifyContent: "center",
+    
   },
   addPlaylistInfo: {
     flex: 1,
