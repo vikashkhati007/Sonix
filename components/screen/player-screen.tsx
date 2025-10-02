@@ -57,6 +57,7 @@ export default function PlayerScreen({
   const [isLiked, setIsLiked] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isLooping, setIsLooping] = useState(false);
   const [duration, setDuration] = useState(0);
   const [position, setPosition] = useState(0);
   const [progress, setProgress] = useState(0);
@@ -410,9 +411,21 @@ export default function PlayerScreen({
         status.durationMillis ? status.positionMillis / status.durationMillis : 0
       );
       setIsPlaying(status.isPlaying);
-      if (status.didJustFinish) {
-        setIsPlaying(false);
-        handleSkipForward();
+
+      const currentDuration = status.durationMillis || 0;
+      const currentPosition = status.positionMillis || 0;
+      if (!status.isPlaying && currentPosition >= currentDuration * 0.99) {
+        if (isLooping) {
+          setPosition(0);
+          setProgress(0);
+          if (soundRef.current) {
+            soundRef.current.setPositionAsync(0);
+            soundRef.current.playAsync();
+          }
+          setIsPlaying(true);
+        } else {
+          handleSkipForward();
+        }
       }
     }
   };
@@ -435,6 +448,10 @@ export default function PlayerScreen({
     } catch (error) {
       console.error("Error toggling play/pause:", error);
     }
+  };
+
+  const toggleLoop = () => {
+    setIsLooping(!isLooping);
   };
 
   const handleSeek = async (value: number) => {
@@ -522,8 +539,8 @@ export default function PlayerScreen({
               </View>
             </View>
             <View style={styles.controlsRow}>
-              <TouchableOpacity style={styles.controlBtn}>
-                <MaterialCommunityIcons name="shuffle" size={26} color="#fff" />
+              <TouchableOpacity style={styles.controlBtn} onPress={toggleLoop}>
+                <MaterialCommunityIcons name="repeat" size={26} color={isLooping ? "#D7FD50" : "#fff"} />
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.controlBtn}
@@ -796,7 +813,6 @@ function AddToPlaylistModal({
     </Modal>
   );
 }
-
 // --- Styles ---
 const styles = StyleSheet.create({
   container: { flex: 1, width: "100%" },
