@@ -20,8 +20,8 @@ export default function RootLayout() {
         <Stack.Screen name="player/[id]" options={{ headerShown: false }} />
         {/* Test Screen */}
         {/* Playlist Screen */}
-        <Stack.Screen name="playlist/playlist" options={{ headerShown: false }} />
-        <Stack.Screen name="playlist/[id]" options={{ headerShown: false }} />
+        <Stack.Screen name="library/index" options={{ headerShown: false }} />
+        <Stack.Screen name="library/[id]" options={{ headerShown: false }} />
       </Stack>
       <StatusBar style="auto" />
     </ThemeProvider>

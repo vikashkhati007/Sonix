@@ -124,7 +124,7 @@ const ActivityScreen = () => {
         </TouchableOpacity>
         <Text style={styles.headerTitle}>My Music</Text>
         <TouchableOpacity style={styles.iconButton}>
-          <Link href="/playlist/playlist">
+          <Link href="/library">
             <Ionicons name="list-outline" size={24} color="#fff" />
           </Link>
         </TouchableOpacity>

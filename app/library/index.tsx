@@ -108,7 +108,7 @@ export default function PlaylistScreen() {
 
   const handlePlaylistPress = (playlist: Playlist) => {
     // Navigate to playlist detail screen
-    router.push(`/playlist/${playlist.id}`);
+    router.push(`/library/${playlist.id}`);
     console.log("Opening playlist:", playlist.name);
   };
 
