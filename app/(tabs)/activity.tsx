@@ -319,19 +319,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
   },
-  albumArtist: {
-    fontSize: 15,
-    color: "#999",
-  },
-  albumDot: {
-    fontSize: 15,
-    color: "#999",
-    marginHorizontal: 8,
-  },
-  albumSongs: {
-    fontSize: 15,
-    color: "#999",
-  },
+  albumArtist: { fontSize: 12, color: "#999" },
+  albumDot: { fontSize: 12, color: "#999", marginHorizontal: 8 },
+  albumSongs: { fontSize: 12, color: "#999" },
   playButton: {
     width: 52,
     height: 52,

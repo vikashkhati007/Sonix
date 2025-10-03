@@ -1,7 +1,9 @@
 import { FontAwesome6, Ionicons } from "@expo/vector-icons";
+import * as NavigationBar from "expo-navigation-bar";
 import { Tabs } from "expo-router";
-import React from "react";
+import React, { useEffect } from "react";
 import { StyleSheet, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 function CustomTabIcon({ name, isActive, Component }: any) {
   return (
@@ -12,9 +14,17 @@ function CustomTabIcon({ name, isActive, Component }: any) {
 }
 
 export default function TabLayout() {
+  const insets = useSafeAreaInsets();
+
+  useEffect(() => {
+    // Hide Android navigation bar (immersive mode)
+    NavigationBar.setVisibilityAsync("hidden");
+    NavigationBar.setBehaviorAsync("overlay-swipe");
+  }, []);
+
   return (
     <Tabs
-      initialRouteName="index" // Home active by default
+      initialRouteName="index"
       screenOptions={{
         headerShown: false,
         tabBarShowLabel: false,
@@ -22,16 +32,23 @@ export default function TabLayout() {
           position: "absolute",
           left: 16,
           right: 16,
-          bottom: 25,
+          bottom: insets.bottom + 10, // adjusts for safe area
           backgroundColor: "rgba(32,33,38,0.92)",
           borderRadius: 50,
-          height: 80,
+          height: 70, // consistent height across devices
           borderTopWidth: 0,
           flexDirection: "row",
           alignItems: "center",
           justifyContent: "space-around",
-          paddingHorizontal: 16,
+          elevation: 5, // shadow on Android
+          shadowColor: "#000", // shadow on iOS
+          shadowOpacity: 0.15,
+          shadowOffset: { width: 0, height: 3 },
+          shadowRadius: 5,
           marginHorizontal: 30,
+        },
+        tabBarItemStyle: {
+          marginVertical: 30, // keeps icons centered
         },
       }}
     >
@@ -47,7 +64,7 @@ export default function TabLayout() {
           ),
         }}
       />
-        <Tabs.Screen
+      <Tabs.Screen
         name="search"
         options={{
           tabBarIcon: ({ focused }) => (
@@ -89,9 +106,9 @@ export default function TabLayout() {
 
 const styles = StyleSheet.create({
   iconWrap: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
     alignItems: "center",
     justifyContent: "center",
   },

@@ -2,13 +2,7 @@ import { ThemedText } from "@/components/themed-text";
 import { Ionicons } from "@expo/vector-icons";
 import { Link } from "expo-router";
 import React from "react";
-import {
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View
-} from "react-native";
+import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const settingsOptions = [
@@ -24,11 +18,11 @@ const SettingsScreen = () => {
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.iconButton}>
-          <Link href="/">
+        <Link href="/" asChild>
+          <TouchableOpacity style={styles.iconButton}>
             <Ionicons name="arrow-back" size={24} color="#fff" />
-          </Link>
-        </TouchableOpacity>
+          </TouchableOpacity>
+        </Link>
         <ThemedText style={styles.headerTitle}>Settings</ThemedText>
         <View style={{ width: 44 }} /> {/* placeholder for right icon */}
       </View>
@@ -38,7 +32,7 @@ const SettingsScreen = () => {
           <TouchableOpacity key={option.id} style={styles.optionItem}>
             <View style={styles.optionLeft}>
               <Ionicons name={option.icon as any} size={24} color="#C4F34A" />
-              <Text style={styles.optionText}>{option.title}</Text>
+              <ThemedText style={styles.optionText}>{option.title}</ThemedText>
             </View>
             <Ionicons name="chevron-forward" size={24} color="#999" />
           </TouchableOpacity>
