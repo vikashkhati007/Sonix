@@ -5,6 +5,7 @@ import React from "react";
 import {
   ScrollView,
   StyleSheet,
+  Text,
   TouchableOpacity,
   View
 } from "react-native";
@@ -37,7 +38,7 @@ const SettingsScreen = () => {
           <TouchableOpacity key={option.id} style={styles.optionItem}>
             <View style={styles.optionLeft}>
               <Ionicons name={option.icon as any} size={24} color="#C4F34A" />
-              <ThemedText style={styles.optionThemedText}>{option.title}</ThemedText>
+              <Text style={styles.optionText}>{option.title}</Text>
             </View>
             <Ionicons name="chevron-forward" size={24} color="#999" />
           </TouchableOpacity>
@@ -76,7 +77,7 @@ const styles = StyleSheet.create({
     borderBottomColor: "rgba(255, 255, 255, 0.1)",
   },
   optionLeft: { flexDirection: "row", alignItems: "center" },
-  optionThemedText: {
+  optionText: {
     fontSize: 16,
     color: "#fff",
     fontWeight: "500",

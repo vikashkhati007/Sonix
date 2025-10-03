@@ -184,7 +184,6 @@ export async function POST(request: Request) {
         artist: { name: artistName },
         album: { name: albumName },
         videoId,
-        thumbnails,
       };
     });
 

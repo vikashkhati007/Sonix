@@ -26,10 +26,10 @@ const SearchScreen = () => {
   // Helper to generate reliable YouTube thumbnail URL from videoId
   const getThumbnailUri = (song: any) => {
     if (!song.videoId) {
-      return 'https://via.placeholder.com/90x90/222/999?text=No+Image';
+      return "https://via.placeholder.com/90x90/222/999?text=No+Image";
     }
     // Standard HQ thumbnail: reliable, larger, no blocking params
-    return `https://i.ytimg.com/vi/${song.videoId}/hqdefault.jpg`;
+    return `https://i.ytimg.com/vi/${song.videoId}/maxresdefault.jpg`;
   };
 
   // Fetch default songs
@@ -40,7 +40,10 @@ const SearchScreen = () => {
       const recent = storedRecentSongs ? JSON.parse(storedRecentSongs) : [];
       const mapped = recent.map((item: any) => ({
         videoId: item.id,
-        thumbnails: [{ url: item.thumbnails[0].url }, { url: item.thumbnails[1].url }],
+        thumbnails: [
+          { url: item.thumbnails[0].url },
+          { url: item.thumbnails[1].url },
+        ],
         name: item.name,
         artist: { name: item.artistName },
         album: { name: item.albumName },
@@ -74,6 +77,7 @@ const SearchScreen = () => {
       const data = await response.json();
       if (Array.isArray(data.response)) {
         setSongs(data.response);
+        console.log(data.response);
       } else {
         setSongs([]);
       }
@@ -148,12 +152,6 @@ const SearchScreen = () => {
           onSubmitEditing={handleSearchSubmit}
           returnKeyType="search"
         />
-        <TouchableOpacity
-          style={styles.submitButton}
-          onPress={handleSearchSubmit}
-        >
-          <Ionicons name="arrow-forward-circle" size={50} color="#C4F34A" />
-        </TouchableOpacity>
       </View>
 
       {/* Song List */}
@@ -175,14 +173,19 @@ const SearchScreen = () => {
                     style={styles.albumImage}
                     resizeMode="cover"
                     onError={(error) => {
-                      console.error(`Image failed for ${song.name} (ID: ${song.videoId}):`, error.nativeEvent.error);
+                      console.error(
+                        `Image failed for ${song.name} (ID: ${song.videoId}):`,
+                        error.nativeEvent.error
+                      );
                     }}
                   />
                 </View>
                 <View style={styles.albumInfo}>
                   <Text style={styles.albumTitle}>{song.name}</Text>
                   <View style={styles.albumMeta}>
-                    <Text style={styles.albumArtist}>By {song.artist?.name}</Text>
+                    <Text style={styles.albumArtist}>
+                      By {song.artist?.name}
+                    </Text>
                     <Text style={styles.albumDot}>•</Text>
                     <Text style={styles.albumSongs}>{song.album?.name}</Text>
                   </View>
@@ -296,7 +299,6 @@ const styles = StyleSheet.create({
     flex: 1, // Fills the container
     width: undefined, // Allows flex to handle sizing
     height: undefined,
-    transform: [{ scale: 1.5 }], // Slight zoom effect
   },
   albumInfo: { flex: 1, marginLeft: 16 },
   albumTitle: {
@@ -335,7 +337,12 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 20,
   },
-  modalTitle: { fontSize: 18, fontWeight: "600", color: "#fff", marginBottom: 12 },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#fff",
+    marginBottom: 12,
+  },
   modalOption: { paddingVertical: 12 },
   modalOptionText: { fontSize: 16, color: "#C4F34A" },
 });

@@ -304,7 +304,6 @@ const styles = StyleSheet.create({
     flex: 1, // Fills the container
     width: undefined, // Allows flex to handle sizing
     height: undefined,
-    transform: [{ scale: 1.5 }], // Slight zoom effect
   },
   albumInfo: {
     flex: 1,
