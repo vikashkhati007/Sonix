@@ -41,13 +41,16 @@ export async function GET(request: Request, response: Response) {
 
   const fulldata =
     data.continuationContents.sectionListContinuation.contents.map(
-      (item:any) => {
+    (item:any) => {
         const playlisttitle =
           item?.musicCarouselShelfRenderer?.header
             ?.musicCarouselShelfBasicHeaderRenderer?.title?.runs?.[0]?.text ??
           "";
         const items = item?.musicCarouselShelfRenderer?.contents?.map(
           (item:any) => {
+            const playlistID =
+              item?.musicTwoRowItemRenderer?.navigationEndpoint
+                ?.browseEndpoint?.browseId ?? "";
             const playlisttitle =
               item?.musicTwoRowItemRenderer?.title?.runs?.[0]?.text ?? "";
             const playlistsubtitle =
@@ -59,6 +62,7 @@ export async function GET(request: Request, response: Response) {
               playlisttitle,
               playlistsubtitle,
               thumbnail,
+              playlistID,
             };
           }
         );

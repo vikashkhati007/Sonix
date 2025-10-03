@@ -16,21 +16,14 @@ import {
   View,
 } from "react-native";
 
-
-export function PlaylistSection({
-  playlists,
-  subHeader,
-  header,
-  cardWidth = 200,
-  imageHeight = 160,
-}) {
+export function PlaylistSection({ data }: { data: any }) {  // Typed prop for clarity
   const [loaded, error] = useFonts({
     Inter_400Regular,
     Inter_600SemiBold,
     Inter_700Bold,
   });
 
-  const scrollRef = useRef(null);
+  const scrollRef = useRef<ScrollView>(null);  // Typed ref
   const [scrollX, setScrollX] = useState(0);
 
   useEffect(() => {
@@ -43,22 +36,33 @@ export function PlaylistSection({
     return null;
   }
 
+  // Early return if no data
+  if (!data || data.length === 0) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.noDataText}>No playlists available</Text>
+      </View>
+    );
+  }
+
   const scrollLeft = () => {
     const newX = Math.max(0, scrollX - 220);
     scrollRef.current?.scrollTo({ x: newX, animated: true });
+    setScrollX(newX);  // Update state for consistency
   };
 
   const scrollRight = () => {
     const newX = scrollX + 220;
     scrollRef.current?.scrollTo({ x: newX, animated: true });
+    setScrollX(newX);  // Update state
   };
 
   return (
     <View style={styles.container}>
       <View style={styles.headerRow}>
         <View style={styles.headerLeft}>
-          <Text style={styles.subHeader}>{subHeader}</Text>
-          <Text style={styles.headerText}>{header}</Text>
+          <Text style={styles.subHeader}>Music that's hot and happening!</Text>
+          <Text style={styles.headerText}>{data.playlisttitle}</Text>
         </View>
         <TouchableOpacity onPress={scrollLeft} style={styles.arrowButton}>
           <Ionicons name="arrow-back" size={24} color="#b3b3b3" />
@@ -75,15 +79,16 @@ export function PlaylistSection({
         scrollEventThrottle={16}
         contentContainerStyle={styles.scrollRow}
       >
-        {playlists.map((pl, idx) => (
+        {data.items.map((pl: { playlistID: any; thumbnail: any; playlisttitle: string | number | bigint | boolean | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | Promise<string | number | bigint | boolean | React.ReactPortal | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | null | undefined> | null | undefined; playlistsubtitle: string | number | bigint | boolean | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | Promise<string | number | bigint | boolean | React.ReactPortal | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | null | undefined> | null | undefined; }, idx: any) => (
           <TouchableOpacity
-            style={[styles.itemCard, { width: cardWidth }]}
-            key={pl.id}
+            style={[styles.itemCard, { width: 200 }]}
+            key={pl.playlistID || idx}  // Fallback key if ID missing
           >
             <View style={styles.imageContainer}>
               <Image
-                source={{ uri: pl.image }}
-                style={[styles.playlistImage, { height: imageHeight }]}
+                source={{ uri: pl.thumbnail }}
+                style={[styles.playlistImage, { height: 160 }]}
+                defaultSource={{ uri: 'placeholder-image-url' }}  // Optional: for loading states
               />
               <View style={styles.playOverlay}>
                 <Ionicons name="play" size={25} color="#fff" />
@@ -91,10 +96,10 @@ export function PlaylistSection({
             </View>
             <View style={styles.textCol}>
               <Text style={styles.playlistTitle} numberOfLines={1}>
-                {pl.name}
+                {pl.playlisttitle}
               </Text>
               <Text style={styles.metaArtists} numberOfLines={1}>
-                {pl.artists}
+                {pl.playlistsubtitle}
               </Text>
             </View>
           </TouchableOpacity>
@@ -103,8 +108,6 @@ export function PlaylistSection({
     </View>
   );
 }
-
-
 
 const styles = StyleSheet.create({
   container: {
@@ -189,5 +192,12 @@ const styles = StyleSheet.create({
     fontFamily: "Inter_400Regular",
     fontSize: 14,
     lineHeight: 18,
+  },
+  noDataText: {  // New style for empty state
+    color: "#b3b3b3",
+    fontFamily: "Inter_400Regular",
+    fontSize: 16,
+    textAlign: "center",
+    padding: 20,
   },
 });
