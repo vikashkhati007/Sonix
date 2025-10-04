@@ -18,10 +18,19 @@ import {
 } from "react-native";
 import { Slider } from "react-native-elements";
 
+interface Song {
+  id: string;
+  thumbnails: string;
+  name: string;
+  artistName: string;
+  albumName: string;
+  downloadLink?: string;
+}
+
 interface Playlist {
   id: string;
   name: string;
-  songs: any[];
+  songs: Song[];
   createdAt: string;
   thumbnail?: string;
 }
@@ -33,6 +42,8 @@ export default function PlayerScreen({
   artistName,
   albumName,
   playlistId,
+  songs,
+  currentIndex: propCurrentIndex,
 }: {
   id: string;
   thumbnails: string;
@@ -40,10 +51,12 @@ export default function PlayerScreen({
   artistName: string;
   albumName: string;
   playlistId?: string;
+  songs?: Song[];
+  currentIndex?: number;
 }) {
-  const [allSongs, setAllSongs] = useState<any[]>([]);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [currentSong, setCurrentSong] = useState({
+  const [allSongs, setAllSongs] = useState<Song[]>([]);
+  const [currentIndex, setCurrentIndex] = useState(propCurrentIndex || 0);
+  const [currentSong, setCurrentSong] = useState<Song>({
     id,
     thumbnails,
     name,
@@ -52,8 +65,8 @@ export default function PlayerScreen({
     downloadLink: "",
   });
 
-  const [playlist, setPlaylist] = useState<any[]>([]);
-  const [likedSongs, setLikedSongs] = useState<any[]>([]);
+  const [playlist, setPlaylist] = useState<Song[]>([]);
+  const [likedSongs, setLikedSongs] = useState<Song[]>([]);
   const [isLiked, setIsLiked] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -69,9 +82,8 @@ export default function PlayerScreen({
   // 1. Load everything on mount
   useEffect(() => {
     loadLikedSongs();
-    loadPlaylist();
     loadAllSongs();
-  }, [id, playlistId]);
+  }, [id, playlistId, songs, propCurrentIndex]);
 
   // 2. Set initial song from props
   useEffect(() => {
@@ -102,7 +114,7 @@ export default function PlayerScreen({
       const likedStr = await AsyncStorage.getItem("likedSongs");
       if (likedStr) {
         const liked = JSON.parse(likedStr);
-        const updatedLiked = liked.map((s: any) => s.id === songId ? { ...s, downloadLink: newLink } : s);
+        const updatedLiked = liked.map((s: Song) => s.id === songId ? { ...s, downloadLink: newLink } : s);
         await AsyncStorage.setItem("likedSongs", JSON.stringify(updatedLiked));
         setLikedSongs(updatedLiked);
       }
@@ -112,10 +124,10 @@ export default function PlayerScreen({
       if (playlistsStr) {
         const playlists = JSON.parse(playlistsStr);
         const updatedPlaylists = playlists.map((p: Playlist) => {
-          if (p.songs.some((s: any) => s.id === songId)) {
+          if (p.songs.some((s: Song) => s.id === songId)) {
             return {
               ...p,
-              songs: p.songs.map((s: any) => s.id === songId ? { ...s, downloadLink: newLink } : s),
+              songs: p.songs.map((s: Song) => s.id === songId ? { ...s, downloadLink: newLink } : s),
             };
           }
           return p;
@@ -161,7 +173,7 @@ export default function PlayerScreen({
             const data = await result.json();
             linkToUse = data.response.directLink;
             if (!linkToUse) throw new Error("No direct link in response");
-            setCurrentSong((prev: any) => ({ ...prev, downloadLink: linkToUse }));
+            setCurrentSong((prev: Song) => ({ ...prev, downloadLink: linkToUse || undefined }));
             await updateDownloadLinkInStorage(currentSong.id, linkToUse);
             await addToRecentSongs(linkToUse, currentSong);
             await loadAllSongs();
@@ -173,7 +185,7 @@ export default function PlayerScreen({
           const data = await result.json();
           linkToUse = data.response.directLink;
           if (!linkToUse) throw new Error("No direct link in response");
-          setCurrentSong((prev:any) => ({ ...prev, downloadLink: linkToUse }));
+          setCurrentSong((prev: Song) => ({ ...prev, downloadLink: linkToUse || undefined }));
           await addToRecentSongs(linkToUse, currentSong);
           await loadAllSongs();
           await loadAndPlayImmediately(linkToUse);
@@ -232,7 +244,7 @@ export default function PlayerScreen({
     }
   }, [allSongs, currentIndex]);
 
-  const handlePlaylistItemPress = (song: any) => {
+  const handlePlaylistItemPress = (song: Song) => {
     const idx = allSongs.findIndex((s) => s.id === song.id);
     if (idx !== -1) {
       setCurrentIndex(idx);
@@ -250,7 +262,7 @@ export default function PlayerScreen({
 
   // --- Like, playlist, and storage helpers (same as before) ---
 
-  const saveLikedSongs = async (songs: any[]) => {
+  const saveLikedSongs = async (songs: Song[]) => {
     try { await AsyncStorage.setItem("likedSongs", JSON.stringify(songs)); }
     catch (error) { console.error("Error saving liked songs:", error); }
   };
@@ -279,7 +291,7 @@ export default function PlayerScreen({
     await loadAllSongs();
   };
 
-  const addToRecentSongs = async (link: string, song: typeof currentSong) => {
+  const addToRecentSongs = async (link: string, song: Song) => {
     try {
       const songData = {
         id: song.id,
@@ -292,7 +304,7 @@ export default function PlayerScreen({
       };
       const stored = await AsyncStorage.getItem("recentSongs");
       let arr = stored ? JSON.parse(stored) : [];
-      arr = arr.filter((s: any) => s.id !== song.id);
+      arr = arr.filter((s: Song) => s.id !== song.id);
       arr.unshift(songData);
       if (arr.length > 50) arr = arr.slice(0, 50);
       await AsyncStorage.setItem("recentSongs", JSON.stringify(arr));
@@ -306,23 +318,23 @@ export default function PlayerScreen({
     } catch (error) { console.error("Error loading liked songs:", error); }
   };
 
-  const loadPlaylist = async () => {
-    try {
-      const storedPlaylist = await AsyncStorage.getItem("currentPlaylist");
-      if (storedPlaylist) setPlaylist(JSON.parse(storedPlaylist));
-    } catch (error) { console.error("Error loading playlist:", error); }
-  };
-
   const loadAllSongs = async () => {
     try {
+      if (songs && songs.length > 0) {
+        setAllSongs(songs);
+        setPlaylist(songs);
+        return;
+      }
       if (playlistId === "undefined") {
         const recentSongsStr = await AsyncStorage.getItem("recentSongs");
         if (recentSongsStr) {
           const recentSongs = JSON.parse(recentSongsStr);
           setAllSongs(recentSongs);
+          setPlaylist(recentSongs);
           return;
         }
         setAllSongs([]);
+        setPlaylist([]);
         return;
       }
       else{
@@ -332,10 +344,12 @@ export default function PlayerScreen({
           const currentPlaylist = playlists.find((p: Playlist) => p.id === playlistId);
           if (currentPlaylist && currentPlaylist.songs) {
             setAllSongs(currentPlaylist.songs);
+            setPlaylist(currentPlaylist.songs);
             return;
           }
         }
         setAllSongs([]);
+        setPlaylist([]);
         return;
       }
     } catch (error) {
@@ -348,20 +362,20 @@ export default function PlayerScreen({
       const recentSongsStr = await AsyncStorage.getItem("recentSongs");
       if (recentSongsStr) {
         const recentSongs = JSON.parse(recentSongsStr);
-        const song = recentSongs.find((s: any) => s.id === songId);
+        const song = recentSongs.find((s: Song) => s.id === songId);
         if (song && song.downloadLink) return song.downloadLink;
       }
       const likedSongsStr = await AsyncStorage.getItem("likedSongs");
       if (likedSongsStr) {
         const likedSongsArr = JSON.parse(likedSongsStr);
-        const song = likedSongsArr.find((s: any) => s.id === songId);
+        const song = likedSongsArr.find((s: Song) => s.id === songId);
         if (song && song.downloadLink) return song.downloadLink;
       }
       const playlistsStr = await AsyncStorage.getItem("userPlaylists");
       if (playlistsStr) {
         const playlists = JSON.parse(playlistsStr);
         for (const playlist of playlists) {
-          const song = playlist.songs.find((s: any) => s.id === songId);
+          const song = playlist.songs.find((s: Song) => s.id === songId);
           if (song && song.downloadLink) return song.downloadLink;
         }
       }
@@ -464,7 +478,7 @@ export default function PlayerScreen({
 
   const handleAddToPlaylist = () => setShowAddToPlaylist(true);
 
-  const renderPlaylistItem = ({ item }: { item: any }) => (
+  const renderPlaylistItem = ({ item }: { item: Song }) => (
     <TouchableOpacity
       style={[styles.playlistItem, item.id === currentSong.id && styles.activePlaylistItem]}
       onPress={() => handlePlaylistItemPress(item)}
@@ -619,7 +633,7 @@ function AddToPlaylistModal({
 }: {
   visible: boolean;
   onClose: () => void;
-  currentSong: any;
+  currentSong: Song;
 }) {
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
   const [showCreateNew, setShowCreateNew] = useState(false);

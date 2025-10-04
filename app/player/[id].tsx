@@ -4,12 +4,24 @@ import { SplashScreen, useLocalSearchParams } from "expo-router";
 import React, { useEffect } from "react";
 import { StyleSheet, View } from "react-native";
 
+type Song = {
+  id: string;
+  thumbnails: string;
+  name: string;
+  artistName: string;
+  albumName: string;
+  downloadLink?: string;
+};
+
 const music = () => {
-  const { id, thumbnails, name, artistName, albumName, playlistId } =
+  const { id, thumbnails, name, artistName, albumName, playlistId, songs: songsStr, currentIndex } =
     useLocalSearchParams();
   const [loaded, error] = useFonts({
     Inter_400Regular,
   });
+
+  const songs: Song[] = songsStr ? JSON.parse(songsStr as string) : [];
+  const index = parseInt(currentIndex as string || '0', 10);
 
   useEffect(() => {
     if (loaded || error) {
@@ -29,6 +41,8 @@ const music = () => {
         artistName={String(artistName)}
         albumName={String(albumName)}
         playlistId={String(playlistId)}
+        songs={songs}
+        currentIndex={index}
       />
     </View>
   );

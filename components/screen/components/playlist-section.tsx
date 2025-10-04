@@ -5,7 +5,7 @@ import {
   useFonts,
 } from "@expo-google-fonts/inter";
 import { Ionicons } from "@expo/vector-icons";
-import { SplashScreen } from "expo-router";
+import { Link, SplashScreen } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
 import {
   Image,
@@ -91,7 +91,9 @@ export function PlaylistSection({ data }: { data: any }) {  // Typed prop for cl
                 defaultSource={{ uri: 'placeholder-image-url' }}  // Optional: for loading states
               />
               <View style={styles.playOverlay}>
+                <Link href={`/library/${pl.playlistID}`}>
                 <Ionicons name="play" size={25} color="#fff" />
+                </Link>
               </View>
             </View>
             <View style={styles.textCol}>
