@@ -1,7 +1,7 @@
 import { Feather, Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Audio } from "expo-av";
-import { Link } from "expo-router";
+import { router } from "expo-router";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -510,10 +510,8 @@ export default function PlayerScreen({
           <View style={styles.overlay} />
           <View style={styles.content}>
             <View style={styles.header}>
-              <TouchableOpacity style={styles.headerBtn}>
-                <Link href="/(tabs)">
+              <TouchableOpacity style={styles.headerBtn} onPress={() => router.back()}>
                   <Ionicons name="chevron-back" size={28} color="#fff" />
-                </Link>
               </TouchableOpacity>
               <Text style={styles.headerTitle}>Now Playing</Text>
               <TouchableOpacity style={styles.headerBtn} onPress={handleLikePress}>

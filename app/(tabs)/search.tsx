@@ -77,7 +77,6 @@ const SearchScreen = () => {
       const data = await response.json();
       if (Array.isArray(data.response)) {
         setSongs(data.response);
-        console.log(data.response);
       } else {
         setSongs([]);
       }

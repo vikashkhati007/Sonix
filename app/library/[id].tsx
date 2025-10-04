@@ -75,7 +75,7 @@ const PlaylistPage = () => {
           });
           if (!response.ok) throw new Error("Fetch failed");
           const data = await response.json();
-          console.log(data);
+          (data);
           if (data.response) {
             const apiSongs = data.response.playlistSongs || [];
             setPlaylist({
