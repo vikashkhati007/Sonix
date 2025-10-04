@@ -24,7 +24,7 @@ const HomePage = () => {  // Removed 'async' – components can't be async
     <View style={styles.container}>
       <Header />
       <MainSection />
-      {playlists.map((pl, idx) => (
+      {playlists.slice(1).map((pl, idx) => (
         <PlaylistSection key={(pl as any).playlisttitle} data={pl} />
       ))}
     </View>

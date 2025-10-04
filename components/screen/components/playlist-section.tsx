@@ -61,7 +61,6 @@ export function PlaylistSection({ data }: { data: any }) {  // Typed prop for cl
     <View style={styles.container}>
       <View style={styles.headerRow}>
         <View style={styles.headerLeft}>
-          <Text style={styles.subHeader}>Music that's hot and happening!</Text>
           <Text style={styles.headerText}>{data.playlisttitle}</Text>
         </View>
         <TouchableOpacity onPress={scrollLeft} style={styles.arrowButton}>

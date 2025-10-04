@@ -3,7 +3,6 @@ import { SplashScreen } from "expo-router";
 import React, { useEffect } from "react";
 import { StyleSheet, View } from "react-native";
 import CategoryTabs from "./screen/components/category";
-import TrendingSection from "./screen/components/trending-section";
 import { ThemedText } from "./themed-text";
 
 const MainSection = () => {
@@ -25,7 +24,6 @@ const MainSection = () => {
     <View style={styles.container}>
       <ThemedText style={styles.text}>Hi, Samantha</ThemedText>
       <CategoryTabs/>
-      <TrendingSection/>
     </View>
   );
 };
