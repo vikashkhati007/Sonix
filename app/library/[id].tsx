@@ -1,5 +1,6 @@
 import { ThemedText } from "@/components/themed-text";
 import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
@@ -46,37 +47,57 @@ const PlaylistPage = () => {
     const loadPlaylist = async () => {
       setLoading(true);
       try {
-        const response = await fetch("/playlist", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ playlistID: id }),
-        });
-        if (!response.ok) throw new Error("Fetch failed");
-        const data = await response.json();
-        console.log(data);
-        if (data.response) {
-          const apiSongs = data.response.playlistSongs || [];
-          setPlaylist({
-            id,
-            name: data.response.playlisttitle || "",
-            description: data.response.playlistdescription || "",
-            thumbnail: data.response.thumbnailUrl?.[0]?.url || "",
-            songs: apiSongs.map((s: any) => ({
-              id: s.videoID,
-              thumbnails: `https://img.youtube.com/vi/${s.videoID}/mqdefault.jpg`,
-              name: s.songTitle || "",
-              artistName: s.songArtist || "",
-              albumName: "",
-            })),
-            createdAt: new Date().toISOString(),
-          });
+        // Check if ID is numeric (user playlist) or string (recommended)
+        const isUserPlaylist = /^\d+$/.test(id);
+
+        if (isUserPlaylist) {
+          // Fetch from AsyncStorage for user playlists
+          const userPlaylistsJson = await AsyncStorage.getItem("userPlaylists");
+          if (userPlaylistsJson) {
+            const userPlaylists: Playlist[] = JSON.parse(userPlaylistsJson);
+            const userPlaylist = userPlaylists.find(p => p.id === id);
+            if (userPlaylist) {
+              setPlaylist(userPlaylist);
+            } else {
+              setPlaylist(null);
+            }
+          } else {
+            setPlaylist(null);
+          }
         } else {
-          setPlaylist(null);
+          // Fetch from API for recommended playlists
+          const response = await fetch("/playlist", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ playlistID: id }),
+          });
+          if (!response.ok) throw new Error("Fetch failed");
+          const data = await response.json();
+          console.log(data);
+          if (data.response) {
+            const apiSongs = data.response.playlistSongs || [];
+            setPlaylist({
+              id,
+              name: data.response.playlisttitle || "",
+              description: data.response.playlistdescription || "",
+              thumbnail: data.response.thumbnailUrl?.[0]?.url || "",
+              songs: apiSongs.map((s: any) => ({
+                id: s.videoID,
+                thumbnails: `https://img.youtube.com/vi/${s.videoID}/mqdefault.jpg`,
+                name: s.songTitle || "",
+                artistName: s.songArtist || "",
+                albumName: "",
+              })),
+              createdAt: new Date().toISOString(),
+            });
+          } else {
+            setPlaylist(null);
+          }
         }
       } catch (error) {
-        console.error("Error fetching playlists:", error);
+        console.error("Error fetching playlist:", error);
         setPlaylist(null);
       } finally {
         setLoading(false);
