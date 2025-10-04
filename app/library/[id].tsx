@@ -306,15 +306,17 @@ const styles = StyleSheet.create({
   headerTextWrap: {
     alignItems: "center",
     gap: 8,
+    
   },
   title: {
-    fontSize: 32,
+    fontSize: 30,
     fontWeight: "700",
     color: "#fff",
     textAlign: "center",
     textShadowColor: "rgba(0,0,0,0.75)",
     textShadowOffset: { width: -1, height: 1 },
     textShadowRadius: 10,
+    paddingHorizontal: 20,
   },
   subtitle: {
     fontSize: 16,
@@ -335,11 +337,10 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   playButton: {
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4.65,
-    elevation: 8,
+    borderWidth: 2,
+    borderColor: "#D7FD50",
+    borderRadius: 32,
+    padding: 5,
   },
   songsContainer: {
     flex: 1,

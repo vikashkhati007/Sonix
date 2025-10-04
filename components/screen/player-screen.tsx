@@ -515,7 +515,7 @@ export default function PlayerScreen({
               </TouchableOpacity>
               <Text style={styles.headerTitle}>Now Playing</Text>
               <TouchableOpacity style={styles.headerBtn} onPress={handleLikePress}>
-                <Feather
+                <Ionicons
                   name="heart"
                   size={28}
                   color={isLiked ? "#D7FD50" : "#fff"}
