@@ -126,7 +126,6 @@ const styles = StyleSheet.create({
   },
   headerLeft: {
     flex: 1,
-    marginHorizontal: 16,
   },
   subHeader: {
     fontSize: 14,
@@ -142,8 +141,6 @@ const styles = StyleSheet.create({
   scrollRow: {
     flexDirection: "row",
     gap: 16,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
     alignItems: "flex-start",
   },
   itemCard: {
