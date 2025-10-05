@@ -120,7 +120,7 @@ export default function PlayerScreen({
       }
 
       // Update playlists
-      const playlistsStr = await AsyncStorage.getItem("userPlaylists");
+      const playlistsStr = await AsyncStorage.getItem("userPlaylist");
       if (playlistsStr) {
         const playlists = JSON.parse(playlistsStr);
         const updatedPlaylists = playlists.map((p: Playlist) => {
@@ -493,7 +493,9 @@ export default function PlayerScreen({
         </Text>
       </View>
       {item.id === currentSong.id && (
-        <MaterialCommunityIcons name="equalizer" size={20} color="#D7FD50" />
+        <View style={styles.iconContainer}>
+          <MaterialCommunityIcons name="equalizer" size={20} color="#D7FD50" />
+        </View>
       )}
     </TouchableOpacity>
   );
@@ -741,7 +743,9 @@ function AddToPlaylistModal({
           {item.songs.length} song{item.songs.length !== 1 ? "s" : ""}
         </Text>
       </View>
-      <Feather name="plus" size={24} color="#D7FD50" />
+      <View style={styles.iconContainer}>
+        <Feather name="plus" size={24} color="#D7FD50" />
+      </View>
     </TouchableOpacity>
   );
 
@@ -868,16 +872,17 @@ const styles = StyleSheet.create({
     shadowColor: "#D7FD50", shadowOpacity: 0.4,
     shadowRadius: 15, shadowOffset: { width: 0, height: 5 },
   },
+ 
   modalContainer: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.8)",
     justifyContent: "flex-end",
   },
   modalContent: {
+    flex: 1,
     backgroundColor: "#1a1a1a",
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    maxHeight: "80%",
+    maxHeight: "40%",
     paddingTop: 20,
   },
   modalHeader: {
@@ -898,7 +903,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   playlistContent: {
-    paddingVertical: 10,
   },
   playlistItem: {
     flexDirection: "row",
@@ -996,6 +1000,12 @@ const styles = StyleSheet.create({
   addPlaylistCount: {
     color: "rgba(255,255,255,0.6)",
     fontSize: 13,
+  },
+  iconContainer: {
+    width: 40,
+    height: 40,
+    alignItems: "center",
+    justifyContent: "center",
   },
   createNewContainer: {
     padding: 20,
