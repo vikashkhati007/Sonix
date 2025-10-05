@@ -175,7 +175,7 @@ const ActivityScreen = () => {
                 <View style={styles.albumInfo}>
                   <Text style={styles.albumTitle}>{album.title}</Text>
                   <View style={styles.albumMeta}>
-                    <Text style={styles.albumArtist}>By {album.artist}</Text>
+                    <Text style={styles.albumArtist}>By {album.artist.slice(0, 10) + (album.artist.length > 10 ? "..." : "")}</Text>
                     {album.source ? (
                       <Text
                         style={[
@@ -263,6 +263,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingRight: 20,
     gap: 10,
+
   },
   tab: {
     paddingHorizontal: 24,
@@ -287,6 +288,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 20,
     marginTop: 16,
+    paddingBottom: 100,
   },
   albumItem: {
     flexDirection: "row",
