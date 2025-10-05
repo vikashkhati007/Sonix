@@ -14,6 +14,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { getThumbnailUri } from "../../constants/helper";
 
 const SearchScreen = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -21,15 +22,6 @@ const SearchScreen = () => {
   const [loading, setLoading] = useState(false);
   const [filterVisible, setFilterVisible] = useState(false);
   const [filterType, setFilterType] = useState("default");
-
-  // Helper to generate reliable YouTube thumbnail URL from videoId
-  const getThumbnailUri = (song: any) => {
-    if (!song.videoId) {
-      return "https://via.placeholder.com/90x90/222/999?text=No+Image";
-    }
-    // Standard HQ thumbnail: reliable, larger, no blocking params
-    return `https://i.ytimg.com/vi/${song.videoId}/maxresdefault.jpg`;
-  };
 
   // Search (POST request)
   const handleSearchSubmit = async () => {

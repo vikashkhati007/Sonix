@@ -162,7 +162,6 @@ const PlaylistPage = () => {
               blurRadius={8}
               source={{ uri: playlist.thumbnail }}
               style={styles.cover}
-              imageStyle={{ borderRadius: 16 }}
             >
               <LinearGradient
                 colors={["rgba(0,0,0,0.6)", "rgba(0,0,0,0.2)"]}
@@ -180,7 +179,7 @@ const PlaylistPage = () => {
             <View style={styles.headerOverlay}>
               <View style={styles.headerTextWrap}>
                 <ThemedText style={styles.title}>
-                  {playlist.name}
+                  {playlist.name.slice(0,1).toUpperCase() + playlist.name.slice(1)}
                 </ThemedText>
                 <ThemedText style={styles.subtitle}>
                   {playlist.songs.length}{" "}
@@ -281,7 +280,6 @@ const styles = StyleSheet.create({
   },
   coverOverlay: {
     flex: 1,
-    borderRadius: 16,
   },
   backButton: {
     position: "absolute",
@@ -337,11 +335,9 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   playButton: {
-    borderWidth: 2,
     borderColor: "#D7FD50",
-    borderRadius: 32,
-    padding: 5,
   },
+
   songsContainer: {
     flex: 1,
     marginTop: 60,

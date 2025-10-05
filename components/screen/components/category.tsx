@@ -33,6 +33,7 @@ export default function CategoryTabs() {
     switch(selected){
       case 'All':
         fetchPlaylists(id.All);
+        fetchPlaylists(id.Chill);
         break;
       case 'Chill':
         fetchPlaylists(id.Chill);
