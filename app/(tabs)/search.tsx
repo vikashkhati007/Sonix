@@ -1,7 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Link } from "expo-router";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import {
   ActivityIndicator,
   Image,
@@ -19,7 +18,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 const SearchScreen = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [songs, setSongs] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [filterVisible, setFilterVisible] = useState(false);
   const [filterType, setFilterType] = useState("default");
 
@@ -32,39 +31,10 @@ const SearchScreen = () => {
     return `https://i.ytimg.com/vi/${song.videoId}/maxresdefault.jpg`;
   };
 
-  // Fetch default songs
-  const fetchDefaultSongs = async () => {
-    setLoading(true);
-    try {
-      const storedRecentSongs = await AsyncStorage.getItem("recentSongs");
-      const recent = storedRecentSongs ? JSON.parse(storedRecentSongs) : [];
-      const mapped = recent.map((item: any) => ({
-        videoId: item.id,
-        thumbnails: [
-          { url: item.thumbnails[0].url },
-          { url: item.thumbnails[1].url },
-        ],
-        name: item.name,
-        artist: { name: item.artistName },
-        album: { name: item.albumName },
-        addedAt: item.addedAt || Date.now(), // track recent
-      }));
-      setSongs(mapped);
-    } catch (e) {
-      setSongs([]);
-    }
-    setLoading(false);
-  };
-
-  // Initial fetch
-  useEffect(() => {
-    fetchDefaultSongs();
-  }, []);
-
   // Search (POST request)
   const handleSearchSubmit = async () => {
     if (!searchQuery.trim()) {
-      fetchDefaultSongs();
+      setSongs([]);
       return;
     }
 

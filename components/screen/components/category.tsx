@@ -1,6 +1,6 @@
 import { id } from '@/constants/playlist';
 import React, { useEffect, useState } from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { PlaylistSection } from './playlist-section';
 
 const categories = ['All', 'Chill' , 'Romance', 'Workout', 'Sleep', 'Focus'];
@@ -8,47 +8,46 @@ const categories = ['All', 'Chill' , 'Romance', 'Workout', 'Sleep', 'Focus'];
 export default function CategoryTabs() {
   const [selected, setSelected] = useState('All');
   const [playlists, setPlaylists] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  const fetchPlaylists = async (query: string) => {
+    try {
+      setLoading(true);
+      const response = await fetch(`/playlist?token=${query}`);
+      if (!response.ok) throw new Error("Fetch failed");
+      const data = await response.json();
+      const filteredItemsPlaylists = (data.response || []).map((playlist: any) => ({
+        ...playlist,
+        items: playlist.items.filter((item:any) => item.playlistID.startsWith("V")),
+      })).filter((playlist:any) => playlist.items.length > 0);
+      setPlaylists(filteredItemsPlaylists);
+      console.log(filteredItemsPlaylists);
+    } catch (error) {
+      console.error("Error fetching playlists:", error);
+      setPlaylists([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(()=>{
-    const fetchPlaylists = async (query: string) => {
-      try {
-        const response = await fetch(`/playlist?token=${query}`);
-        if (!response.ok) throw new Error("Fetch failed");
-        const data = await response.json();
-        const filteredItemsPlaylists = (data.response || []).map((playlist: any) => ({
-          ...playlist,
-          items: playlist.items.filter((item:any) => item.playlistID.startsWith("V")),
-        })).filter((playlist:any) => playlist.items.length > 0);
-        setPlaylists(filteredItemsPlaylists);
-        console.log(filteredItemsPlaylists);
-      } catch (error) {
-        console.error("Error fetching playlists:", error);
-        setPlaylists([]);
-      }
-    };
     switch(selected){
       case 'All':
-        setPlaylists([]);
         fetchPlaylists(id.All);
         break;
       case 'Chill':
-        setPlaylists([]);
         fetchPlaylists(id.Chill);
         break;
       case 'Romance':
-        setPlaylists([]);
         fetchPlaylists(id.Romance);
         break;
       case 'Workout':
-        setPlaylists([]);
         fetchPlaylists(id.Workout);
         break;
       case 'Sleep':
-        setPlaylists([]);
         fetchPlaylists(id.Sleep);
         break;
       case 'Focus':
-        setPlaylists([]);
         fetchPlaylists(id.Focus);
         break;
     }
@@ -69,6 +68,7 @@ export default function CategoryTabs() {
               selected === cat ? styles.activeTab : styles.inactiveTab
             ]}
             onPress={() => setSelected(cat)}
+            disabled={loading}
           >
             <Text style={[
               styles.tabText,
@@ -80,9 +80,20 @@ export default function CategoryTabs() {
         ))}
       </ScrollView>
       <View style={styles.playlistsContainer}>
-      {playlists.map((playlist, idx) => (
-        <PlaylistSection key={idx} data={playlist} />
-      ))}
+        {loading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#d7fd50" />
+            <Text style={styles.loadingText}>Loading {selected} playlists...</Text>
+          </View>
+        ) : playlists.length > 0 ? (
+          playlists.map((playlist, idx) => (
+            <PlaylistSection key={idx} data={playlist} />
+          ))
+        ) : (
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>No playlists available for {selected}</Text>
+          </View>
+        )}
       </View>
     </View>
   );
@@ -129,5 +140,27 @@ const styles = StyleSheet.create({
   inactiveText: {
     color: '#fff',
   },
+  loadingContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 40,
+    gap: 12,
+  },
+  loadingText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  emptyContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 40,
+  },
+  emptyText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '500',
+    textAlign: 'center',
+  },
 });
-
