@@ -21,7 +21,6 @@ export default function CategoryTabs() {
         items: playlist.items.filter((item:any) => item.playlistID.startsWith("V")),
       })).filter((playlist:any) => playlist.items.length > 0);
       setPlaylists(filteredItemsPlaylists);
-      console.log(filteredItemsPlaylists);
     } catch (error) {
       console.error("Error fetching playlists:", error);
       setPlaylists([]);

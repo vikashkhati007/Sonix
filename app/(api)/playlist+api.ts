@@ -129,8 +129,6 @@ export async function GET(request: Request, response: Response) {
   );
   const result = await res.json();
 
-  // console.log([0].musicCarouselShelfRenderer.header.musicCarouselShelfBasicHeaderRenderer.title.runs[0].text);
-
   const fulldata =
     result.contents.singleColumnBrowseResultsRenderer.tabs[0].tabRenderer.content.sectionListRenderer.contents.map(
       (item: any) => {
