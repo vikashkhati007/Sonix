@@ -3,10 +3,10 @@ import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { PlaylistSection } from './playlist-section';
 
-const categories = ['All', 'Chill' , 'Romance', 'Workout', 'Sleep', 'Focus'];
+const categories = ['Trending', 'Chill' , 'Romance', 'Workout', 'Sleep', 'Focus'];
 
 export default function CategoryTabs() {
-  const [selected, setSelected] = useState('All');
+  const [selected, setSelected] = useState('Trending');
   const [playlists, setPlaylists] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -31,9 +31,8 @@ export default function CategoryTabs() {
 
   useEffect(()=>{
     switch(selected){
-      case 'All':
-        fetchPlaylists(id.All);
-        fetchPlaylists(id.Chill);
+      case 'Trending':
+        fetchPlaylists(id.Trending);
         break;
       case 'Chill':
         fetchPlaylists(id.Chill);

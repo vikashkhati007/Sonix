@@ -1,5 +1,5 @@
 export const id = {
-    All: "ggMPOg1uX1NPTld3SDN3WGs4",
+    Trending: "ggMPOg1uX1NPTld3SDN3WGs4",
     Chill: "ggMPOg1uX1JOQWZFeDByc2Jm",
     Romance: "ggMPOg1uX0FzQ2FhZWtUY211",
     Workout: "ggMPOg1uX09LWkhnTjRGRUJh",
