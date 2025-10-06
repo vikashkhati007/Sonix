@@ -193,17 +193,16 @@ const PlaylistPage = () => {
                     {playlist.description}
                   </ThemedText>
                 ) : null}
-
-                <TouchableOpacity
-                  style={styles.playButton}
-                  onPress={handlePlayAll}
-                  disabled={playlist.songs.length === 0}
-                >
-                  <View style={styles.playButtonInner}>
-                    <Ionicons name="play" size={24} color="#000" />
-                  </View>
-                </TouchableOpacity>
-              </View>
+                  <TouchableOpacity
+                    style={styles.playButton}
+                    onPress={handlePlayAll}
+                    disabled={playlist.songs.length === 0}
+                  >
+                    <View style={styles.playButtonInner}>
+                      <Ionicons name="play" size={24} color="#000" />
+                    </View>
+                  </TouchableOpacity>
+                </View>
             </View>
           </View>
 
@@ -313,15 +312,19 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   headerOverlay: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
+    display: "flex",
+    flexDirection: "column",
     paddingBottom: 80,
     paddingTop: 100,
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "rgba(0,0,0,0.4)",
+  },
+  playButtonText: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: "#000",
+    marginHorizontal: 4,
   },
   headerTextWrap: {
     alignItems: "center",

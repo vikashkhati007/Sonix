@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "musicplayer",
-    "slug": "musicplayer",
+    "name": "Sonix",
+    "slug": "sonix",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "musicplayer",
+    "scheme": "sonix",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
