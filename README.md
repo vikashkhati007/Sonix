@@ -1,6 +1,6 @@
 # Sonix
 
-**Sonix** is a full-featured, cross-platform music player built with [Expo](https://expo.dev/), providing a beautiful and responsive interface for streaming and managing your personal music library. Designed with React Native, Sonix works seamlessly on Android, iOS, and web.
+**Sonix** is a completely free, open-source music player for Android, iOS, and web—no ads, no paywalls, just smooth listening. Enjoy trending playlists, instant song search, and a beautiful, intuitive UI. Powered by Expo and React Native. Stream, discover, and manage your music library with zero distractions!
 
 ***
 
@@ -135,16 +135,3 @@ Distributed under the MIT License. See `LICENSE` for details.
 
 ***
 
-Would you like this as a Markdown file to copy, or do you want me to directly guide you to update the README on GitHub?
-
-[1](https://github.com/vikashkhati007/Sonix)
-[2](https://github.com/vikashkhati007/Sonix)
-[3](https://github.com/vikashkhati007/Sonix/blob/main/package.json)
-[4](https://github.com/vikashkhati007/Sonix/blob/main/app.json)
-[5](https://github.com/vikashkhati007/Sonix/tree/main/app/(api))
-[6](https://github.com/vikashkhati007/Sonix/tree/main/app/(tabs))
-[7](https://github.com/vikashkhati007/Sonix/tree/main/app/library)
-[8](https://github.com/vikashkhati007/Sonix/tree/main/app/player)
-[9](https://github.com/vikashkhati007/Sonix/blob/main/app/_layout.tsx)
-[10](https://github.com/vikashkhati007/Sonix/tree/main/components/screen)
-[11](https://github.com/vikashkhati007/Sonix/tree/main/components/ui)
