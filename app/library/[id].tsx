@@ -298,9 +298,9 @@ const styles = StyleSheet.create({
     top: 20,
     left: 20,
     zIndex: 1,
-    padding: 8,
+    padding: 10,
     backgroundColor: "rgba(0,0,0,0.5)",
-    borderRadius: 20,
+    borderRadius: 50,
   },
   headerImage: {
     width: 80,
