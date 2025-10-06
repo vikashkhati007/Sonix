@@ -208,7 +208,7 @@ export default function PlayerScreen({
     };
   }, [currentSong.id]);
 
-  // --- Core player handlers (NO useEffect to sync index to song, see below!) ---
+  // --- Core player handlers ---
   const handleSkipForward = useCallback(async () => {
     if (!allSongs.length) return;
     let nextIndex = (currentIndex + 1) % allSongs.length;
@@ -260,7 +260,7 @@ export default function PlayerScreen({
     }
   };
 
-  // --- Like, playlist, and storage helpers (same as before) ---
+  // --- Like, playlist, and storage helpers ---
 
   const saveLikedSongs = async (songs: Song[]) => {
     try { await AsyncStorage.setItem("likedSongs", JSON.stringify(songs)); }
@@ -399,7 +399,11 @@ export default function PlayerScreen({
     });
     const { sound } = await Audio.Sound.createAsync(
       { uri: link },
-      { shouldPlay: true, progressUpdateIntervalMillis: 500 },
+      { 
+        shouldPlay: true, 
+        progressUpdateIntervalMillis: 500,
+        isLooping: isLooping 
+      },
       onPlaybackStatusUpdate
     );
     soundRef.current = sound;
@@ -420,18 +424,16 @@ export default function PlayerScreen({
       );
       setIsPlaying(status.isPlaying);
 
-      const currentDuration = status.durationMillis || 0;
-      const currentPosition = status.positionMillis || 0;
-      if (!status.isPlaying && currentPosition >= currentDuration * 0.99) {
+      // Handle song end
+      if (status.didJustFinish) {
         if (isLooping) {
-          setPosition(0);
-          setProgress(0);
+          // Loop the current song
           if (soundRef.current) {
             soundRef.current.setPositionAsync(0);
             soundRef.current.playAsync();
           }
-          setIsPlaying(true);
         } else {
+          // Go to next song when loop is off
           handleSkipForward();
         }
       }
@@ -458,14 +460,30 @@ export default function PlayerScreen({
     }
   };
 
-  const toggleLoop = () => {
-    setIsLooping(!isLooping);
+  const toggleLoop = async () => {
+    const newLoopState = !isLooping;
+    setIsLooping(newLoopState);
+    
+    // Update the sound's loop setting if sound is loaded
+    if (soundRef.current) {
+      try {
+        await soundRef.current.setIsLoopingAsync(newLoopState);
+      } catch (error) {
+        console.error("Error setting loop state:", error);
+      }
+    }
   };
 
   const handleSeek = async (value: number) => {
     if (soundRef.current && duration) {
-      const seekPosition = value * duration;
-      await soundRef.current.setPositionAsync(seekPosition);
+      try {
+        const seekPosition = Math.max(0, Math.min(value * duration, duration));
+        await soundRef.current.setPositionAsync(seekPosition);
+        setPosition(seekPosition);
+        setProgress(value);
+      } catch (error) {
+        console.error("Error seeking:", error);
+      }
     }
   };
 
@@ -625,7 +643,7 @@ export default function PlayerScreen({
   );
 }
 
-// --- AddToPlaylistModal stays unchanged ---
+// --- AddToPlaylistModal ---
 function AddToPlaylistModal({
   visible,
   onClose,
@@ -823,6 +841,7 @@ function AddToPlaylistModal({
     </Modal>
   );
 }
+
 // --- Styles ---
 const styles = StyleSheet.create({
   container: { flex: 1, width: "100%" },

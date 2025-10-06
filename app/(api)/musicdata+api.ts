@@ -1,5 +1,3 @@
-import data from "../../data.json";
-
 interface SongData {
   videoId: string;
   name: string;
@@ -9,7 +7,7 @@ interface SongData {
   duration: number;
 }
 export function GET(request: Request) {
-  return Response.json({ response: data });
+  return Response.json({ response: "Get you data" });
 }
 
 export async function POST(request: Request) {
