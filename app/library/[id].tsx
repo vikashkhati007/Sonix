@@ -35,7 +35,7 @@ type Playlist = {
   thumbnail: string;
 };
 
-const { width } = Dimensions.get("window");
+const { width, height } = Dimensions.get("window");
 
 const PlaylistPage = () => {
   const { id } = useLocalSearchParams() as { id: string };
@@ -55,7 +55,7 @@ const PlaylistPage = () => {
           const userPlaylistsJson = await AsyncStorage.getItem("userPlaylists");
           if (userPlaylistsJson) {
             const userPlaylists: Playlist[] = JSON.parse(userPlaylistsJson);
-            const userPlaylist = userPlaylists.find(p => p.id === id);
+            const userPlaylist = userPlaylists.find((p) => p.id === id);
             if (userPlaylist) {
               setPlaylist(userPlaylist);
             } else {
@@ -75,7 +75,7 @@ const PlaylistPage = () => {
           });
           if (!response.ok) throw new Error("Fetch failed");
           const data = await response.json();
-          (data);
+          data;
           if (data.response) {
             const apiSongs = data.response.playlistSongs || [];
             setPlaylist({
@@ -159,12 +159,14 @@ const PlaylistPage = () => {
           {/* Header Section */}
           <View style={styles.headerContainer}>
             <ImageBackground
-              blurRadius={8}
+              blurRadius={10}
               source={{ uri: playlist.thumbnail }}
               style={styles.cover}
+              imageStyle={styles.coverImage}
+              resizeMode="cover"
             >
               <LinearGradient
-                colors={["rgba(0,0,0,0.6)", "rgba(0,0,0,0.2)"]}
+                colors={["rgba(0,0,0,0.7)", "rgba(0,0,0,0.4)"]}
                 style={styles.coverOverlay}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 0, y: 1 }}
@@ -179,23 +181,27 @@ const PlaylistPage = () => {
             <View style={styles.headerOverlay}>
               <View style={styles.headerTextWrap}>
                 <ThemedText style={styles.title}>
-                  {playlist.name.slice(0,1).toUpperCase() + playlist.name.slice(1)}
-                </ThemedText>
-                <ThemedText style={styles.subtitle}>
-                  {playlist.songs.length}{" "}
-                  {playlist.songs.length === 1 ? "song" : "songs"}
+                  {playlist.name.slice(0, 1).toUpperCase() +
+                    playlist.name.slice(1)}
                 </ThemedText>
                 {playlist.description ? (
                   <ThemedText style={styles.description} numberOfLines={2}>
+                    <ThemedText style={styles.subtitle}>
+                      {playlist.songs.length}{" "}
+                      {playlist.songs.length === 1 ? "song" : "songs"} •
+                    </ThemedText>
                     {playlist.description}
                   </ThemedText>
                 ) : null}
+
                 <TouchableOpacity
                   style={styles.playButton}
                   onPress={handlePlayAll}
                   disabled={playlist.songs.length === 0}
                 >
-                  <Ionicons name="play-circle" size={64} color="#D7FD50" />
+                  <View style={styles.playButtonInner}>
+                    <Ionicons name="play" size={24} color="#000" />
+                  </View>
                 </TouchableOpacity>
               </View>
             </View>
@@ -218,6 +224,7 @@ const PlaylistPage = () => {
                   <Image
                     source={{ uri: item.thumbnails }}
                     style={styles.thumbnail}
+                    resizeMode="cover"
                   />
                   <View style={styles.songMeta}>
                     <ThemedText style={styles.songTitle} numberOfLines={1}>
@@ -266,9 +273,12 @@ const styles = StyleSheet.create({
     color: "rgba(255,255,255,0.7)",
   },
   headerContainer: {
-    height: 420,
+    height: height * 0.45,
+    width: width,
     position: "relative",
     marginBottom: -60,
+    borderRadius: 20,
+    overflow: "hidden",
   },
   cover: {
     position: "absolute",
@@ -276,7 +286,9 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    borderRadius: 16,
+  },
+  coverImage: {
+    borderRadius: 20,
   },
   coverOverlay: {
     flex: 1,
@@ -290,24 +302,33 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0,0,0,0.5)",
     borderRadius: 20,
   },
+  headerImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 50,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
   headerOverlay: {
     position: "absolute",
     bottom: 0,
     left: 0,
     right: 0,
     paddingBottom: 80,
-    paddingTop: 160,
+    paddingTop: 100,
     justifyContent: "center",
     alignItems: "center",
-    borderRadius: 16,
+    backgroundColor: "rgba(0,0,0,0.4)",
   },
   headerTextWrap: {
     alignItems: "center",
-    gap: 8,
-    
+    gap: 12,
   },
   title: {
-    fontSize: 30,
+    fontSize: 26,
     fontWeight: "700",
     color: "#fff",
     textAlign: "center",
@@ -315,6 +336,7 @@ const styles = StyleSheet.create({
     textShadowOffset: { width: -1, height: 1 },
     textShadowRadius: 10,
     paddingHorizontal: 20,
+    marginTop: 8,
   },
   subtitle: {
     fontSize: 16,
@@ -331,13 +353,30 @@ const styles = StyleSheet.create({
     textShadowColor: "rgba(0,0,0,0.75)",
     textShadowOffset: { width: -1, height: 1 },
     textShadowRadius: 10,
-    width: width * 0.8,
+    width: width * 0.75,
     lineHeight: 20,
+    marginTop: 4,
   },
   playButton: {
+    borderWidth: 2,
     borderColor: "#D7FD50",
+    borderRadius: 40,
+    padding: 4,
+    marginTop: 8,
   },
-
+  playButtonInner: {
+    backgroundColor: "#D7FD50",
+    borderRadius: 36,
+    width: 72,
+    height: 72,
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
   songsContainer: {
     flex: 1,
     marginTop: 60,
