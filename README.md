@@ -1,7 +1,3 @@
-Here's a fully updated README draft for the Sonix repository, including an improved project overview, features, setup, usage, and a dedicated contribution section. Please review and update your `README.md` file on GitHub with this content.
-
-***
-
 # Sonix
 
 **Sonix** is a full-featured, cross-platform music player built with [Expo](https://expo.dev/), providing a beautiful and responsive interface for streaming and managing your personal music library. Designed with React Native, Sonix works seamlessly on Android, iOS, and web.
