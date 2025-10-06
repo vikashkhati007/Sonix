@@ -1,50 +1,154 @@
-# Welcome to your Expo app 👋
+Here's a fully updated README draft for the Sonix repository, including an improved project overview, features, setup, usage, and a dedicated contribution section. Please review and update your `README.md` file on GitHub with this content.
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+***
 
-## Get started
+# Sonix
 
-1. Install dependencies
+**Sonix** is a full-featured, cross-platform music player built with [Expo](https://expo.dev/), providing a beautiful and responsive interface for streaming and managing your personal music library. Designed with React Native, Sonix works seamlessly on Android, iOS, and web.
 
-   ```bash
-   npm install
-   ```
+***
 
-2. Start the app
+## ✨ Features
 
-   ```bash
-   npx expo start
-   ```
+- **Modern Music Player UI**: Intuitive layout with dynamic theme and smooth navigation.
+- **Tab Navigation**: Easily switch between library, trending, activity, and search tabs.
+- **Search Functionality**: Search for songs, albums, and artists with instant results and filter options (A-Z, Artist, etc).
+- **Playlist Support**: Mood-based and trending playlists. Fetch playlist details, navigate between tracks.
+- **Recent & Liked History**: Tracks your recently played and favorite songs.
+- **Download & Streaming**: Supports both streaming and offline download (with proper permissions).
+- **Cross-platform**: Compatible with Android, iOS, and Web (Expo Go and PWA).
+- **Beautiful Animations & Effects**: Leverages Expo libraries for gradients, images, haptic feedback, and blur effects.
+- **Customizable & Extensible**: Modular component structure and typed routing for easier maintenance.
+- **Persistent Storage**: Uses AsyncStorage for persisting user data such as liked/recent songs.
 
-In the output, you'll find options to open the app in a
+***
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+## 🗂️ Project Structure
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+```
+Sonix/
+│
+├── app/
+│   ├── (api)/         # API integration and backend logic
+│   ├── (tabs)/        # Tab navigation: Home, Search, Activity, Settings
+│   ├── library/       # Playlist and library screens
+│   ├── player/        # Music player component
+│   └── _layout.tsx    # App-wide layout and routing
+│
+├── assets/images/     # All image assets (icons, splash, etc)
+├── components/
+│   ├── screen/        # Screen-level React components (Home, Player, etc)
+│   └── ui/            # UI components/widgets
+├── constants/         # Shared constants (themes, helpers, playlist data)
+├── hooks/             # Custom React hooks
+├── scripts/           # Node scripts for project automation
+├── package.json       # Dependency and project config
+├── app.json           # Expo application config
+└── README.md          # Project documentation
+```
 
-## Get a fresh project
+***
 
-When you're ready, run:
+## 🚀 Getting Started
 
+### Prerequisites
+
+- [Node.js](https://nodejs.org/) (v16+ recommended)
+- [Expo CLI](https://docs.expo.dev/get-started/installation/) (`npm install -g expo-cli`)
+- Android Studio/iOS Simulator for mobile testing (optional)
+
+### Installation
+
+```bash
+git clone https://github.com/vikashkhati007/Sonix.git
+cd Sonix
+npm install
+```
+
+### Running the App
+
+```bash
+npx expo start
+```
+Choose to run in the development build, Android Emulator, iOS Simulator, or Expo Go on your device.
+
+### Project Reset (Blank Slate)
+
+To clear starter code and start afresh:
 ```bash
 npm run reset-project
 ```
+This moves example code to `app-example/` and creates a blank `app/` directory.
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+***
 
-## Learn more
+## 📱 Usage
 
-To learn more about developing your project with Expo, look at the following resources:
+- Explore trending and mood-based playlists on the Home screen.
+- Search for your favorite songs, albums, or artists.
+- Access and manage your music library, recently viewed, and liked songs.
+- Stream songs online or download for offline playback.
+- Supports dark mode and modern navigation gestures.
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+***
 
-## Join the community
+## 🤝 Contributing
 
-Join our community of developers creating universal apps.
+We welcome contributions from the community!
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+### How to Contribute
+
+1. **Fork the repository** to your own GitHub account.
+2. **Create a new branch** for your feature or bugfix:
+   ```
+   git checkout -b feat/my-feature
+   ```
+3. **Commit your changes** with clear, concise commit messages.
+4. **Push to your forked repo** and **open a Pull Request** here.
+5. Clearly describe your changes and reference related issues if any.
+
+### Guidelines
+
+- Use the existing file and folder structure.
+- Follow the [Conventional Commits](https://www.conventionalcommits.org/) format.
+- Write clean, readable, and well-commented code.
+- Run `npm run lint` to check for linting errors.
+- Ensure your code does not break other features.
+
+### Need Help?
+
+Open an [issue](https://github.com/vikashkhati007/Sonix/issues) with your question or suggestion!
+
+***
+
+## 📄 License
+
+Distributed under the MIT License. See `LICENSE` for details.
+
+***
+
+## 🙏 Acknowledgements
+
+- [Expo](https://expo.dev/)
+- [React Native](https://reactnative.dev/)
+- [Contributors](https://github.com/vikashkhati007/Sonix/graphs/contributors)
+
+***
+
+*Happy Listening!*
+
+***
+
+Would you like this as a Markdown file to copy, or do you want me to directly guide you to update the README on GitHub?
+
+[1](https://github.com/vikashkhati007/Sonix)
+[2](https://github.com/vikashkhati007/Sonix)
+[3](https://github.com/vikashkhati007/Sonix/blob/main/package.json)
+[4](https://github.com/vikashkhati007/Sonix/blob/main/app.json)
+[5](https://github.com/vikashkhati007/Sonix/tree/main/app/(api))
+[6](https://github.com/vikashkhati007/Sonix/tree/main/app/(tabs))
+[7](https://github.com/vikashkhati007/Sonix/tree/main/app/library)
+[8](https://github.com/vikashkhati007/Sonix/tree/main/app/player)
+[9](https://github.com/vikashkhati007/Sonix/blob/main/app/_layout.tsx)
+[10](https://github.com/vikashkhati007/Sonix/tree/main/components/screen)
+[11](https://github.com/vikashkhati007/Sonix/tree/main/components/ui)
