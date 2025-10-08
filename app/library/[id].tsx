@@ -85,7 +85,7 @@ const PlaylistPage = () => {
               thumbnail: data.response.thumbnailUrl?.[0]?.url || "",
               songs: apiSongs.map((s: any) => ({
                 id: s.videoID,
-                thumbnails: `https://img.youtube.com/vi/${s.videoID}/mqdefault.jpg`,
+                thumbnails: `https://img.youtube.com/vi/${s.videoID}/maxresdefault.jpg`,
                 name: s.songTitle || "",
                 artistName: s.songArtist || "",
                 albumName: "",
