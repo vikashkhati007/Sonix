@@ -17,6 +17,7 @@ const Header = () => {
             uri: "https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg",
           }}
           size="medium"
+          avatarStyle={styles.profileImage}
         />
       </View>
     </ThemedView>
@@ -38,7 +39,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    padding: 20,
+    paddingHorizontal: 20,
+    paddingTop: 20,
   },
   otherContainer: {
     flexDirection: "row",
@@ -46,11 +48,9 @@ const styles = StyleSheet.create({
     gap: 20,
   },
   profileImage: {
-    width: 40,
-    height: 40,
-    borderRadius: 20, // optional if you want it circular
+    borderRadius: 50, // optional if you want it circular
     borderWidth: 2,
-    borderColor: "#fff",
+    borderColor: "white",
   },
   icon: {
     backgroundColor: "#1C1C29",
