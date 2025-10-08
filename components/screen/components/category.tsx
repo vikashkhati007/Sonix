@@ -1,4 +1,3 @@
-import { ThemedText } from '@/components/themed-text';
 import { id } from '@/constants/playlist';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -55,7 +54,6 @@ export default function CategoryTabs() {
 
   return (
     <View style={styles.wrapper}>
-      <ThemedText style={styles.text}>Categories</ThemedText>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -107,7 +105,8 @@ const styles = StyleSheet.create({
     display: 'flex',
     gap: 20
   },
-  playlistsContainer: {
+ 
+    playlistsContainer: {
     flexDirection: 'column',
     justifyContent: 'space-between',
     display: 'flex',
