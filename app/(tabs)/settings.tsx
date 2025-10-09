@@ -6,11 +6,11 @@ import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const settingsOptions = [
-  { id: 1, title: "Account", icon: "person-outline" },
-  { id: 2, title: "Notifications", icon: "notifications-outline" },
-  { id: 3, title: "Theme", icon: "color-palette-outline" },
-  { id: 4, title: "About", icon: "information-circle-outline" },
-  { id: 5, title: "Logout", icon: "log-out-outline" },
+  { id: 1, title: "Account", icon: "person-outline" as const },
+  { id: 2, title: "Notifications", icon: "notifications-outline" as const },
+  { id: 3, title: "Theme", icon: "color-palette-outline" as const },
+  { id: 4, title: "About", icon: "information-circle-outline" as const },
+  { id: 5, title: "Logout", icon: "log-out-outline" as const },
 ];
 
 const SettingsScreen = () => {
@@ -31,7 +31,7 @@ const SettingsScreen = () => {
         {settingsOptions.map((option) => (
           <TouchableOpacity key={option.id} style={styles.optionItem}>
             <View style={styles.optionLeft}>
-              <Ionicons name={option.icon as any} size={24} color="#C4F34A" />
+              <Ionicons name={option.icon} size={24} color="#C4F34A" />
               <ThemedText style={styles.optionText}>{option.title}</ThemedText>
             </View>
             <Ionicons name="chevron-forward" size={24} color="#999" />

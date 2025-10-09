@@ -82,7 +82,7 @@ const MusicSearchScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#18181B', paddingHorizontal: 18, paddingTop: 24 },
+  container: { flex: 1, backgroundColor: '#18181B', paddingHorizontal: 18, paddingTop: 24},
   header: { flexDirection: 'row', alignItems: 'center', marginBottom: 18 },
    headerBtn: {
     display: 'flex',
@@ -109,7 +109,7 @@ const styles = StyleSheet.create({
   filterText: { color: '#fff', fontSize: 15 },
   activeFilterText: { color: '#18181B', fontWeight: 'bold' },
 
-  musicItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14 },
+  musicItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14, paddingBottom: 16 },
   musicImg: { width: 54, height: 54, borderRadius: 16, marginRight: 16, backgroundColor: '#444' },
   musicInfo: { flex: 1 },
   musicTitle: { color: '#fff', fontSize: 17, fontWeight: '500' },
