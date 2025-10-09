@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Link } from "expo-router";
+import { Link, useLocalSearchParams } from "expo-router";
 import React from "react";
 import {
   Image,
@@ -17,7 +17,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 const albums: string | any[] = [];
 
 const ActivityScreen = () => {
-  const [selectedTab, setSelectedTab] = React.useState("All");
+  const params = useLocalSearchParams();
+  const [selectedTab, setSelectedTab] = React.useState(params?.tab || "All");
   const [likedSongs, setLikedSongs] = React.useState<any>([]);
   const [recentSongs, setRecentSongs] = React.useState<any>([]);
   const [isLoading, setIsLoading] = React.useState(false);
