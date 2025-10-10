@@ -464,7 +464,7 @@ export default function PlayerScreen({
       if (status.didJustFinish) {
         if (!isLooping) {
           //check out here later
-            handleSkipForward();
+          handleSkipForward();
         } else {
           if (soundRef.current) {
             soundRef.current.setPositionAsync(0);

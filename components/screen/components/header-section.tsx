@@ -19,26 +19,26 @@ const Header = () => {
           avatarStyle={styles.profileImage}
         />
         <View style={styles.iconContainer}>
-          <Link href="/activity?tab=Liked Songs" asChild>
-            <View style={styles.iconWrapper}>
+          <View style={styles.iconWrapper}>
+            <Link href="/activity?tab=Liked Songs" asChild>
               <Ionicons
                 style={styles.iconStyle}
                 name="heart-outline"
                 size={28}
                 color="white"
               />
-            </View>
-          </Link>
-          <Link href="/library" asChild>
-            <View style={styles.iconWrapper}>
+            </Link>
+          </View>
+          <View style={styles.iconWrapper}>
+            <Link href="/library" asChild>
               <Ionicons
                 style={styles.iconStyle}
                 name="albums-outline"
                 size={28}
                 color="white"
               />
-            </View>
-          </Link>
+            </Link>
+          </View>
         </View>
       </View>
       <View style={styles.greetingContainer}>
