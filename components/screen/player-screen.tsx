@@ -182,7 +182,8 @@ export default function PlayerScreen({
           } catch (playError) {
             console.log("Existing link failed, fetching new one");
             fetchedNew = true;
-            const result = await fetch("/download?id=" + currentSong.id);
+            
+            const result = await fetch("https://apiprojects.vercel.app/api/musicplayer/downloader?id=" + currentSong.id);
             if (!result.ok) throw new Error("Network response was not ok");
             const data = await result.json();
             linkToUse = data.response.directLink;
@@ -197,7 +198,7 @@ export default function PlayerScreen({
             await loadAndPlayImmediately(linkToUse);
           }
         } else {
-          const result = await fetch("/download?id=" + currentSong.id);
+          const result = await fetch("https://apiprojects.vercel.app/api/musicplayer/downloader?id=" + currentSong.id);
           if (!result.ok) throw new Error("Network response was not ok");
           const data = await result.json();
           linkToUse = data.response.directLink;

@@ -32,7 +32,7 @@ const SearchScreen = () => {
 
     setLoading(true);
     try {
-      const response = await fetch("/musicdata", {
+      const response = await fetch(`https://apiprojects.vercel.app/api/musicplayer/search`, {
         method: "POST",
         body: JSON.stringify({ query: searchQuery }),
       });

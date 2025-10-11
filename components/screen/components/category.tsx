@@ -13,7 +13,7 @@ export default function CategoryTabs() {
   const fetchPlaylists = async (query: string) => {
     try {
       setLoading(true);
-      const response = await fetch(`/playlist?token=${query}`);
+      const response = await fetch(`https://apiprojects.vercel.app/api/musicplayer/playlist?token=${query}`);
       if (!response.ok) throw new Error("Fetch failed");
       const data = await response.json();
       const filteredItemsPlaylists = (data.response || []).map((playlist: any) => ({

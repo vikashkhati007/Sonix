@@ -66,7 +66,7 @@ const PlaylistPage = () => {
           }
         } else {
           // Fetch from API for recommended playlists
-          const response = await fetch("/playlist", {
+          const response = await fetch(`https://apiprojects.vercel.app/api/musicplayer/playlist`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -75,7 +75,7 @@ const PlaylistPage = () => {
           });
           if (!response.ok) throw new Error("Fetch failed");
           const data = await response.json();
-          data;
+          console.log(data);
           if (data.response) {
             const apiSongs = data.response.playlistSongs || [];
             setPlaylist({
